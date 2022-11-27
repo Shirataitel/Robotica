@@ -1,0 +1,15 @@
+shira taitelbaum 
+322207341
+
+folder hierarchy-
+ex2sol:
+	ex2:
+		CMakeLists.txt
+		Krembot.ino.cpp
+		Krembot.ino.h
+	ex2.argos
+	Readme.txt
+	report.pdf
+	
+in ex2.argos the random_seed is 5.
+write unset ARGOS_PLUGIN_PATH in the terminal before argos3 -c config/ex2.argos
