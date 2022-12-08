@@ -17,9 +17,6 @@ CDegrees degreeX;
 int robotGridSize;
 //bool first_time = true;
 
-// To-remove
-int **arr;
-int **final_grid;
 
 enum State {
     move,
@@ -38,6 +35,7 @@ void WSTC_controller::setup() {
     width = mapMsg.width;
     robotGridSize = (int) (robotSize / resolution);
 
+    // occupancyGrid
     save_grid_to_file("/home/oriya/krembot_sim/krembot_ws/WSTC/grid.txt", occupancyGrid, height, width);
     pos = posMsg.pos;
     degreeX = posMsg.degreeX;
@@ -46,6 +44,7 @@ void WSTC_controller::setup() {
     save_grid_to_file_with_robot_location("/home/oriya/krembot_sim/krembot_ws/WSTC/grid-with-robot-loc.txt",
                                           occupancyGrid, height, width, col, row);
 
+    // uniformGrid
     init_grid(occupancyGrid, weights, robotGridSize, width, height);
 
     int h = height / robotGridSize;
@@ -53,10 +52,17 @@ void WSTC_controller::setup() {
     save_grid_to_file("/home/oriya/krembot_sim/krembot_ws/WSTC/uniform-grid.txt",
                       uniformGrid, h, w);
 
-//    init_grid(uniformGrid, weightsUniform, 2, h, w);
-//
-//    save_grid_to_file("/home/oriya/krembot_sim/krembot_ws/WSTC/coarse-grid.txt",
-//                      coarseGrid, h / 2, w / 2);
+    save_grid_to_file("/home/oriya/krembot_sim/krembot_ws/WSTC/uniform-weights.txt",
+                      weightsUniform, h, w);
+
+    // coarseGrid
+    init_grid(uniformGrid, weightsUniform, 2, h, w);
+
+    save_grid_to_file("/home/oriya/krembot_sim/krembot_ws/WSTC/coarse-grid.txt",
+                      coarseGrid, h / 2, w / 2);
+
+    save_grid_to_file("/home/oriya/krembot_sim/krembot_ws/WSTC/coarse-weights.txt",
+                      weightsCoarse, h / 2, w / 2);
 }
 
 void WSTC_controller::init_grid(int **oldGrid, int **oldWeights, int D, int _width, int _height) {
@@ -75,10 +81,11 @@ void WSTC_controller::init_grid(int **oldGrid, int **oldWeights, int D, int _wid
         for (int j = 0; j < gridWidth; j++) {
             grid[i][j] = 0;
             maxWeight = 0;
+            weightsGrid[i][j] = 0;
             for (int k = 0; k < D; k++) {
                 for (int m = 0; m < D; m++) {
-                    if (oldGrid[i * D + k][j * D + m] > maxWeight) {
-                        maxWeight = oldGrid[i * D + k][j * D + m];
+                    if (oldWeights[i * D + k][j * D + m] > maxWeight) {
+                        maxWeight = oldWeights[i * D + k][j * D + m];
                     }
                 }
             }
