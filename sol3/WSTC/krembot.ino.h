@@ -19,6 +19,20 @@ struct PosMsg {
     CDegrees degreeX;
 };
 
+class Node{
+private:
+    int id;
+    int x;
+    int y;
+    vector<Node *> neighbors;
+public:
+    Node(int id, int x, int y);
+    int getX() const;
+    int getY() const;
+    int getId() const;
+    vector<Node *> getNeighbors();
+    void addNeighbor(Node *n);
+};
 
 class WSTC_controller : public KrembotController {
 private:
@@ -65,6 +79,10 @@ public:
     void save_grid_to_file_with_robot_location(string name, int **grid,
                                                int _height, int _width,
                                                int robot_col, int robot_row);
+    void init_nodes_matrix(int _width, int _height);
+
+    void save_nodes_to_file(string name, int _height, int _width);
+    void free_memory();
 };
 
 
