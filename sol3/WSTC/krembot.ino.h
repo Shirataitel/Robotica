@@ -24,12 +24,16 @@ private:
     int id;
     int x;
     int y;
+    int weight;
+    bool obstacle;
     vector<Node *> neighbors;
 public:
-    Node(int id, int x, int y);
+    Node(int id, int x, int y, int weight, bool obstacle);
     int getX() const;
     int getY() const;
     int getId() const;
+    int getWeight() const;
+    bool isObstacle() const;
     vector<Node *> getNeighbors();
     void addNeighbor(Node *n);
 };
@@ -81,10 +85,14 @@ public:
                                                int robot_col, int robot_row);
     void init_nodes_matrix(int _width, int _height);
 
+    void init_neighbors_matrix(int _width, int _height);
+    void add_edge(Node* node,int _width, int _height);
+
     void save_nodes_to_file(string name, int _height, int _width);
+    void save_edges_to_file(string name, int _height, int _width);
     void free_memory();
 
-    void init_neighbors_matrix(int _width, int _height);
+
 };
 
 
