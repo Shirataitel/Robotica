@@ -60,9 +60,10 @@ void WSTC_controller::setup() {
 
     save_grid_to_file("/home/oriya/krembot_sim/krembot_ws/files/coarse-weights.txt", weightsCoarse, h / 2, w / 2);
 
-//    init_nodes_matrix(w / 2, h / 2);
-//
-//    save_nodes_to_file("/home/oriya/krembot_sim/krembot_ws/files/nodes.txt", h / 2, w / 2);
+    // nodesMatrix
+    init_nodes_matrix(w / 2, h / 2);
+
+    save_nodes_to_file("/home/oriya/krembot_sim/krembot_ws/files/nodes.txt", h / 2, w / 2);
 
     free_memory();
 }
@@ -82,13 +83,13 @@ void WSTC_controller::free_memory() {
     delete[] coarseGrid;
     delete[] weightsCoarse;
 
-//    for (int i = 0; i < width/robotGridSize/2; i++) {
-//        for(int j = 0; j < height/robotGridSize/2; j++){
-//            delete nodesMatrix[i][j];
-//        }
-//        delete[] nodesMatrix[i];
-//    }
-//    delete[] nodesMatrix;
+    for (int i = 0; i < width/robotGridSize/2; i++) {
+        for(int j = 0; j < height/robotGridSize/2; j++){
+            delete nodesMatrix[i][j];
+        }
+        delete[] nodesMatrix[i];
+    }
+    delete[] nodesMatrix;
 }
 
 void WSTC_controller::loop() {
