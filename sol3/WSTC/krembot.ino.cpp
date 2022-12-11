@@ -64,8 +64,7 @@ void WSTC_controller::setup() {
     // neighborsMatrix
     int numOfNodes = (w / 2) * (h / 2);
     init_neighbors_matrix(w / 2, h / 2);
-    save_edges_to_file("/home/oriya/krembot_sim/krembot_ws/files/neighbors.txt", numOfNodes,numOfNodes);
-
+    save_edges_to_file("/home/oriya/krembot_sim/krembot_ws/files/neighbors.txt", numOfNodes, numOfNodes);
 
 
     free_memory();
@@ -179,17 +178,14 @@ void WSTC_controller::add_edge(Node *node, int _width, int _height) {
     int x = node->getX();
     int y = node->getY();
     int weight = node->getWeight();
-    int newX, newY;
+    int newX, newY, maxWeight;
     Node *neighbor;
 
     // up
     newX = x + 1;
     newY = y;
     if (newX < _height) {
-        neighbor = nodesMatrix[newX][newY];
-        if (!neighbor->isObstacle()) {
-            neighborsMatrix[id][neighbor->getId()] = max(weight, neighbor->getWeight());
-        }
+        check_valid_edge(newX, newY, node);
     }
 
 
@@ -197,30 +193,31 @@ void WSTC_controller::add_edge(Node *node, int _width, int _height) {
     newX = x - 1;
     newY = y;
     if (newX >= 0) {
-        neighbor = nodesMatrix[newX][newY];
-        if (!neighbor->isObstacle()) {
-            neighborsMatrix[id][neighbor->getId()] = max(weight, neighbor->getWeight());
-        }
+        check_valid_edge(newX, newY, node);
     }
 
     // right
     newX = x;
     newY = y + 1;
     if (newY < _width) {
-        neighbor = nodesMatrix[newX][newY];
-        if (!neighbor->isObstacle()) {
-            neighborsMatrix[id][neighbor->getId()] = max(weight, neighbor->getWeight());
-        }
+        check_valid_edge(newX, newY, node);
     }
 
     // left
     newX = x;
     newY = y - 1;
     if (newY >= 0) {
-        neighbor = nodesMatrix[newX][newY];
-        if (!neighbor->isObstacle()) {
-            neighborsMatrix[id][neighbor->getId()] = max(weight, neighbor->getWeight());
-        }
+        check_valid_edge(newX, newY, node);
+    }
+}
+
+void WSTC_controller::check_valid_edge(int newX, int newY, Node *node) {
+    Node *neighbor = nodesMatrix[newX][newY];
+    int maxWeight = 0;
+    if (!neighbor->isObstacle()) {
+        maxWeight = max(node->getWeight(), neighbor->getWeight());
+        neighborsMatrix[node->getId()][neighbor->getId()] = maxWeight;
+        node->addNeighbor(neighbor, maxWeight);
     }
 }
 
@@ -353,7 +350,7 @@ void WSTC_controller::save_nodes_to_file(string name, int _height, int _width) {
 void WSTC_controller::save_edges_to_file(string name, int _height, int _width) {
     ofstream m_cOutput;
     m_cOutput.open(name, ios_base::trunc | ios_base::out);
-    for (int row =0; row<_height; row++) {
+    for (int row = 0; row < _height; row++) {
         for (int col = 0; col < _width; col++) {
             m_cOutput << neighborsMatrix[row][col] << " ";
         }
@@ -396,10 +393,10 @@ bool Node::isObstacle() const {
     return obstacle;
 }
 
-vector<Node *> Node::getNeighbors() {
+vector<pair<Node *, int>> Node::getNeighbors() {
     return neighbors;
 }
 
-void Node::addNeighbor(Node *n) {
-    neighbors.push_back(n);
+void Node::addNeighbor(Node *n, int weight) {
+    neighbors.push_back(make_pair(n, weight));
 }

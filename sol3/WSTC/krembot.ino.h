@@ -19,23 +19,30 @@ struct PosMsg {
     CDegrees degreeX;
 };
 
-class Node{
+class Node {
 private:
     int id;
     int x;
     int y;
     int weight;
     bool obstacle;
-    vector<Node *> neighbors;
+    vector<pair<Node *, int>> neighbors;
 public:
     Node(int id, int x, int y, int weight, bool obstacle);
+
     int getX() const;
+
     int getY() const;
+
     int getId() const;
+
     int getWeight() const;
+
     bool isObstacle() const;
-    vector<Node *> getNeighbors();
-    void addNeighbor(Node *n);
+
+    vector<pair<Node *, int>> getNeighbors();
+
+    void addNeighbor(Node *n, int w);
 };
 
 class WSTC_controller : public KrembotController {
@@ -83,13 +90,19 @@ public:
     void save_grid_to_file_with_robot_location(string name, int **grid,
                                                int _height, int _width,
                                                int robot_col, int robot_row);
+
     void init_nodes_matrix(int _width, int _height);
 
     void init_neighbors_matrix(int _width, int _height);
-    void add_edge(Node* node,int _width, int _height);
+
+    void add_edge(Node *node, int _width, int _height);
+
+    void check_valid_edge(int newX, int newY, Node* node);
 
     void save_nodes_to_file(string name, int _height, int _width);
+
     void save_edges_to_file(string name, int _height, int _width);
+
     void free_memory();
 
 
