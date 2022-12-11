@@ -83,6 +83,8 @@ public:
 
     void save_nodes_to_file(string name, int _height, int _width);
     void free_memory();
+
+    void init_neighbors_matrix(int _width, int _height);
 };
 
 
