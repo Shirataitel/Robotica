@@ -163,7 +163,15 @@ void WSTC_controller::init_grid(int **oldGrid, int **oldWeights, int D, int _wid
         }
     }
 
-    for (int i = 0; i <_height; i++) {
+    if (_height % 2 != 0) {
+        _height -= 1;
+    }
+
+    if (_width % 2 != 0) {
+        _width -= 1;
+    }
+
+    for (int i = 0; i < _height; i++) {
         for (int j = 0; j < _width; j++) {
             if (oldGrid[i][j] == 1) {
                 grid[i / D][j / D] = 1;
