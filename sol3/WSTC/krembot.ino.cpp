@@ -1,8 +1,8 @@
 #include "krembot.ino.h"
 
+#define INF 9999999
 
-int col, row;
-
+int col, row, colU, rowU, colC, rowC;
 int **occupancyGrid;
 int **uniformGrid;
 int **coarseGrid;
@@ -17,6 +17,7 @@ int height, width;
 CVector2 pos;
 CDegrees degreeX;
 int robotGridSize;
+vector<pair<int, int>> mst;
 //bool first_time = true;
 
 
@@ -45,17 +46,26 @@ void WSTC_controller::setup() {
     save_grid_to_file_with_robot_location("/home/oriya/krembot_sim/krembot_ws/files/grid-with-robot-loc.txt",
                                           occupancyGrid, height, width, col, row);
 
+
     // uniformGrid
     init_grid(occupancyGrid, weights, robotGridSize, width, height);
     int h = height / robotGridSize;
     int w = width / robotGridSize;
     save_grid_to_file("/home/oriya/krembot_sim/krembot_ws/files/uniform-grid.txt", uniformGrid, h, w);
     save_grid_to_file("/home/oriya/krembot_sim/krembot_ws/files/uniform-weights.txt", weightsUniform, h, w);
+    pos_to_col_row_uniform(&col, &row);
+    save_grid_to_file_with_robot_location("/home/oriya/krembot_sim/krembot_ws/files/uniform-with-robot-loc.txt",
+                                          uniformGrid, h, w, colU, rowU);
+
 
     // coarseGrid
     init_grid(uniformGrid, weightsUniform, 2, w, h);
     save_grid_to_file("/home/oriya/krembot_sim/krembot_ws/files/coarse-grid.txt", coarseGrid, h / 2, w / 2);
     save_grid_to_file("/home/oriya/krembot_sim/krembot_ws/files/coarse-weights.txt", weightsCoarse, h / 2, w / 2);
+    pos_to_col_row_coarse(&colU, &rowU);
+    save_grid_to_file_with_robot_location("/home/oriya/krembot_sim/krembot_ws/files/coarse-with-robot-loc.txt",
+                                          coarseGrid, h / 2, w / 2, colC, rowC);
+
 
     // nodesMatrix
     init_nodes_matrix(w / 2, h / 2);
@@ -66,8 +76,48 @@ void WSTC_controller::setup() {
     init_neighbors_matrix(w / 2, h / 2);
     save_edges_to_file("/home/oriya/krembot_sim/krembot_ws/files/neighbors.txt", numOfNodes, numOfNodes);
 
+    prim(numOfNodes);
 
     free_memory();
+}
+
+void WSTC_controller::prim(int numOfNodes) {
+    Node *startNode = nodesMatrix[rowC][colC];
+    int startNodeId = startNode->getId();
+    int numOfEdges = 0;
+    bool *selected = new bool[numOfNodes];
+    for (int i = 0; i < numOfNodes; i++) {
+        selected[i] = false;
+    }
+    selected[startNodeId] = true;
+    int x;
+    int y;
+    while (numOfEdges < numOfNodes - 1) {
+        int min = INF;
+        x = 0;
+        y = 0;
+        for (int i = 0; i < numOfNodes; i++) {
+            if (selected[i]) {
+                for (int j = 0; j < numOfNodes; j++) {
+                    if (!selected[j] && (neighborsMatrix[i][j] != -1)) {
+                        if (min > neighborsMatrix[i][j]) {
+                            min = neighborsMatrix[i][j];
+                            x = i;
+                            y = j;
+                        }
+                    }
+                }
+            }
+        }
+        if(neighborsMatrix[x][y]!= -1){
+            LOG << x << " - " << y << " :  " << neighborsMatrix[x][y]<< endl;
+            mst.push_back(make_pair(x, y));
+        }
+        selected[y] = true;
+        numOfEdges++;
+    }
+    LOG<<mst.size()<<endl;
+    delete[] selected;
 }
 
 void WSTC_controller::free_memory() {
@@ -279,6 +329,16 @@ void WSTC_controller::init_grid(int **oldGrid, int **oldWeights, int D, int _wid
 void WSTC_controller::pos_to_col_row(CVector2 pos, int *pCol, int *pRow) {
     *pCol = (pos.GetX() - origin.GetX()) / resolution;
     *pRow = (pos.GetY() - origin.GetY()) / resolution;
+}
+
+void WSTC_controller::pos_to_col_row_uniform(int *pCol, int *pRow) {
+    colU = *pCol / robotGridSize;
+    rowU = *pRow / robotGridSize;
+}
+
+void WSTC_controller::pos_to_col_row_coarse(int *pCol, int *pRow) {
+    colC = *pCol / 2;
+    rowC = *pRow / 2;
 }
 
 bool WSTC_controller::got_to_cell(int _col, int _row) {

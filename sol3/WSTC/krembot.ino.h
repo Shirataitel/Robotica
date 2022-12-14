@@ -85,6 +85,10 @@ public:
 
     void pos_to_col_row(CVector2 pos, int *pCol, int *pRow);
 
+    void pos_to_col_row_uniform(int *pCol, int *pRow);
+
+    void pos_to_col_row_coarse(int *pCol, int *pRow);
+
     void save_grid_to_file(string name, int **grid, int _height, int _width);
 
     void save_grid_to_file_with_robot_location(string name, int **grid,
@@ -102,6 +106,8 @@ public:
     void save_nodes_to_file(string name, int _height, int _width);
 
     void save_edges_to_file(string name, int _height, int _width);
+
+    void prim(int numOfNodes);
 
     void free_memory();
 
