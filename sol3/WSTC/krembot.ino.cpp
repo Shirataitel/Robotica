@@ -21,6 +21,7 @@ CDegrees degreeX;
 int robotGridSize;
 vector<pair<int, int>> mst;
 vector<Node *> path;
+int loopIndex;
 //bool first_time = true;
 
 
@@ -40,6 +41,7 @@ void WSTC_controller::setup() {
     height = mapMsg.height;
     width = mapMsg.width;
     robotGridSize = (int) (robotSize / resolution);
+    loopIndex = 0;
 
     // occupancyGrid
     save_grid_to_file("/home/oriya/krembot_sim/krembot_ws/WSTC/grid.txt", occupancyGrid, height, width);
@@ -100,53 +102,59 @@ void WSTC_controller::init_path() {
     vector<Node *> blackNodes;
     vector<Node *> neighbors;
     neighbors.push_back(root);
-    Node *current;
-    int i=0;
-    while (i<4) {
+    Node *current = root;
+    Node *prev = root;
+    int i = 0;
+    while (true) {
         i++;
-        current = neighbors.front();
-        if (current == nullptr) {
+        if (neighbors.empty()) {
             break;
         }
+        prev = current;
+        current = neighbors.front();
         path.push_back(current);
         blackNodes.push_back(current);
 //        LOG<<"currentID"<<current->getId()<<endl;
-        neighbors = get_relevant_neighbors(current);
+        neighbors = get_relevant_neighbors(current, prev);
+        neighbors = get_unBlackNodes(neighbors, blackNodes);
 //        for(int i=0; i< neighbors.size();i++){
 //            LOG<< "relevant neighbor"<<neighbors[i]->getId()<<endl;
 //        }
-        neighbors = get_unBlackNodes(neighbors, blackNodes);
     }
-    path.push_back(root);
+//    path.push_back(root);
+//    LOG<< "@@@@@@@@@@@@@@@@@@"<<endl;
+//    for(int i=0; i< path.size();i++){
+//        LOG<< i<<".   "<<path. getId()<<endl;
+//    }
 }
 
 vector<Node *> WSTC_controller::get_unBlackNodes(vector<Node *> nodes, vector<Node *> blackNodes) {
     vector<Node *> unBlackNodes;
     bool isExist;
-    LOG<<"********"<<endl;
-    LOG<<"size"<<nodes.size()<<endl;
+//    LOG<<"********"<<endl;
+//    LOG<<"size"<<nodes.size()<<endl;
     for (int i = 0; i < nodes.size(); i++) {
-        LOG<<"---"<<endl;
+//        LOG<<"---"<<endl;
         isExist = false;
-        LOG<<"nodes"<<nodes[i]->getId()<<endl;
+//        LOG<<"nodes"<<nodes[i]->getId()<<endl;
         for (int j = 0; j < blackNodes.size(); j++) {
-            LOG<<"black"<<blackNodes[j]->getId()<<endl;
+//            LOG<<"black"<<blackNodes[j]->getId()<<endl;
             if (nodes[i]->getId() == blackNodes[j]->getId()) {
-                LOG<<"true"<<endl;
+//                LOG<<"true"<<endl;
                 isExist = true;
                 break;
             }
         }
         if (!isExist) {
             unBlackNodes.push_back(nodes[i]);
-            LOG<<"white"<<nodes[i]->getId()<<endl;
+//            LOG<<"white"<<nodes[i]->getId()<<endl;
         }
     }
     return unBlackNodes;
 }
 
 
-vector<Node *> WSTC_controller::get_relevant_neighbors(Node *node) {
+vector<Node *> WSTC_controller::get_relevant_neighbors(Node *node, Node *prev) {
     vector<Node *> relevant_neighbors;
     Node *megaNode = nodesMatrixCoarse[node->getX() / 2][node->getY() / 2];
 //    LOG<< "mega node id: "<<megaNode->getId()<<endl;
@@ -188,6 +196,12 @@ vector<Node *> WSTC_controller::get_relevant_neighbors(Node *node) {
         if (validDir.left) {
             relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
         }
+        if (prev->getX() + 1 == node->getX()) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
+        }
+        if (prev->getY() + 1 == node->getY()) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
+        }
     }
         // down-right
     else if (xRelative == 0 && yRelative == 1) {
@@ -202,6 +216,12 @@ vector<Node *> WSTC_controller::get_relevant_neighbors(Node *node) {
         }
         if (validDir.left && !validDir.down) {
             relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+        }
+        if (prev->getX() + 1 == node->getX()) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+        }
+        if (prev->getY() - 1 == node->getY()) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
         }
     }
         // up-left
@@ -218,6 +238,12 @@ vector<Node *> WSTC_controller::get_relevant_neighbors(Node *node) {
         if (validDir.left) {
             relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
         }
+        if (prev->getX() - 1 == node->getX()) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
+        }
+        if (prev->getY() + 1 == node->getY()) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
+        }
     }
         // up-right
     else if (xRelative == 1 && yRelative == 1) {
@@ -233,8 +259,13 @@ vector<Node *> WSTC_controller::get_relevant_neighbors(Node *node) {
         if (validDir.left && !validDir.up) {
             relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
         }
+        if (prev->getX() - 1 == node->getX()) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+        }
+        if (prev->getY() - 1 == node->getY()) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
+        }
     }
-
     return relevant_neighbors;
 }
 
@@ -347,31 +378,88 @@ void WSTC_controller::free_memory() {
     delete[] neighborsMatrix;
 }
 
-void WSTC_controller::loop() {
-    krembot.loop();
+//void WSTC_controller::loop() {
+//    krembot.loop();
+//
+//    pos = posMsg.pos;
+//    degreeX = posMsg.degreeX;
+//
+//    switch (state) {
+//        case State::move: {
+//            if (!got_to_cell(col + 3, row)) {
+//                krembot.Base.drive(100, 0);
+//            } else {
+//                krembot.Base.stop();
+//            }
+//            break;
+//        }
+//        case State::turn: {
+//            if (!got_to_orientation(CDegrees(0))) {
+//                krembot.Base.drive(0, 20);
+//            } else {
+//                krembot.Base.stop();
+//                state = State::move;
+//            }
+//            break;
+//        }
+//    }
+//}
 
+void WSTC_controller::loop() {
+    LOG << "loopIndex: " << loopIndex << endl;
+    krembot.loop();
     pos = posMsg.pos;
     degreeX = posMsg.degreeX;
-
+    Node *curr, *next;
+    if (loopIndex == path.size() - 1) {
+        LOG << "Done" << endl;
+        krembot.Base.stop();
+    }
+    curr = path[loopIndex];
+    next = path[loopIndex + 1];
+    LOG << "curr Node: " << curr->getId() << endl;
+    LOG << "next Node: " << next->getId() << endl;
+    CDegrees wantedDegree = calculateWantedDegree(curr, next);
+    LOG << "wantedDegree: " << wantedDegree.GetValue() << endl;
     switch (state) {
         case State::move: {
-            if (!got_to_cell(col + 3, row)) {
+            LOG << "MOVE" << endl;
+            if (!got_to_cell(next->getY() * robotGridSize, next->getX() * robotGridSize)) {
                 krembot.Base.drive(100, 0);
+                LOG << "Not got to cell" << endl;
             } else {
                 krembot.Base.stop();
+                state = State::turn;
+                LOG << "Got to cell" << endl;
+                loopIndex++;
             }
             break;
         }
         case State::turn: {
-            if (!got_to_orientation(CDegrees(0))) {
-                krembot.Base.drive(0, 20);
+            LOG << "TURN" << endl;
+            if (!got_to_orientation(wantedDegree)) {
+                LOG << "Not got to orientation" << endl;
+                krembot.Base.drive(0, 90);
             } else {
+                LOG << "Got to orientation" << endl;
                 krembot.Base.stop();
                 state = State::move;
             }
             break;
         }
     }
+}
+
+CDegrees WSTC_controller::calculateWantedDegree(Node *current_cell, Node *next_cell) {
+    Degrees deg;
+    if (current_cell->getX() < next_cell->getX())
+        return deg.up_degree;
+    if (current_cell->getX() > next_cell->getX())
+        return deg.down_degree;
+    if (current_cell->getY() < next_cell->getY())
+        return deg.right_degree;
+    if (current_cell->getY() > next_cell->getY())
+        return deg.left_degree;
 }
 
 void WSTC_controller::init_nodes_matrix_coarse(int _width, int _height) {

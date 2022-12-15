@@ -26,6 +26,13 @@ struct Direction {
     bool left;
 };
 
+struct Degrees {
+    CDegrees up_degree = CDegrees(90);
+    CDegrees left_degree = CDegrees(180);
+    CDegrees down_degree = CDegrees(270);
+    CDegrees right_degree = CDegrees(0);
+};
+
 class Node {
 private:
     int id;
@@ -130,13 +137,15 @@ public:
 
     void update_directions_matrix(Node *n1, Node *n2);
 
-    vector<Node *> get_relevant_neighbors(Node *node);
+    vector<Node *> get_relevant_neighbors(Node *node,  Node *prev);
 
     void init_path();
 
     vector<Node *> get_unBlackNodes(vector<Node *> nodes, vector<Node *> blackNodes);
 
     void free_memory();
+
+    CDegrees calculateWantedDegree(Node *current_cell, Node *next_cell);
 
 
 };
