@@ -19,6 +19,13 @@ struct PosMsg {
     CDegrees degreeX;
 };
 
+struct Direction {
+    bool up;
+    bool right;
+    bool down;
+    bool left;
+};
+
 class Node {
 private:
     int id;
@@ -26,9 +33,10 @@ private:
     int y;
     int weight;
     bool obstacle;
-    vector<pair<Node *, int>> neighbors;
+    bool coarseGrid;
+    vector<Node *> neighbors;
 public:
-    Node(int id, int x, int y, int weight, bool obstacle);
+    Node(int id, int x, int y, int weight, bool obstacle, bool coarseGrid);
 
     int getX() const;
 
@@ -40,9 +48,14 @@ public:
 
     bool isObstacle() const;
 
-    vector<pair<Node *, int>> getNeighbors();
+    bool isCoarseNode() const;
 
-    void addNeighbor(Node *n, int w);
+    bool isEqual(Node *otherNode);
+
+    vector<Node *> getNeighbors();
+
+    void addNeighbor(Node *n);
+
 };
 
 class WSTC_controller : public KrembotController {
@@ -95,19 +108,33 @@ public:
                                                int _height, int _width,
                                                int robot_col, int robot_row);
 
-    void init_nodes_matrix(int _width, int _height);
+    void init_nodes_matrix_coarse(int _width, int _height);
+
+    void init_nodes_matrix_uniform(int _width, int _height);
 
     void init_neighbors_matrix(int _width, int _height);
 
     void add_edge(Node *node, int _width, int _height);
 
-    void check_valid_edge(int newX, int newY, Node* node);
+    void check_valid_edge(int newX, int newY, Node *node);
 
-    void save_nodes_to_file(string name, int _height, int _width);
+    void save_nodes_to_file(string name, Node ***grid, int _height, int _width);
 
     void save_edges_to_file(string name, int _height, int _width);
 
     void prim(int numOfNodes);
+
+    bool isExistEdge(Node *node1, Node *node2);
+
+    void init_directions_matrix(int _width, int _height);
+
+    void update_directions_matrix(Node *n1, Node *n2);
+
+    vector<Node *> get_relevant_neighbors(Node *node);
+
+    void init_path();
+
+    vector<Node *> get_unBlackNodes(vector<Node *> nodes, vector<Node *> blackNodes);
 
     void free_memory();
 
