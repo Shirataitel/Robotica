@@ -96,12 +96,13 @@ void WSTC_controller::setup() {
 
 void WSTC_controller::init_path() {
     Node *root = nodesMatrixUni[rowU][colU];
+//    LOG<<"rootID"<<root->getId()<<endl;
     vector<Node *> blackNodes;
     vector<Node *> neighbors;
     neighbors.push_back(root);
     Node *current;
     int i=0;
-    while (i<10) {
+    while (i<4) {
         i++;
         current = neighbors.front();
         if (current == nullptr) {
@@ -109,41 +110,70 @@ void WSTC_controller::init_path() {
         }
         path.push_back(current);
         blackNodes.push_back(current);
+//        LOG<<"currentID"<<current->getId()<<endl;
         neighbors = get_relevant_neighbors(current);
-//        neighbors = get_unBlackNodes(neighbors, blackNodes);
+//        for(int i=0; i< neighbors.size();i++){
+//            LOG<< "relevant neighbor"<<neighbors[i]->getId()<<endl;
+//        }
+        neighbors = get_unBlackNodes(neighbors, blackNodes);
     }
     path.push_back(root);
 }
 
 vector<Node *> WSTC_controller::get_unBlackNodes(vector<Node *> nodes, vector<Node *> blackNodes) {
     vector<Node *> unBlackNodes;
-    bool isExit = false;
+    bool isExist;
+    LOG<<"********"<<endl;
+    LOG<<"size"<<nodes.size()<<endl;
     for (int i = 0; i < nodes.size(); i++) {
+        LOG<<"---"<<endl;
+        isExist = false;
+        LOG<<"nodes"<<nodes[i]->getId()<<endl;
         for (int j = 0; j < blackNodes.size(); j++) {
-            if (nodes[i]->isEqual(blackNodes[j])) {
-                isExit = true;
+            LOG<<"black"<<blackNodes[j]->getId()<<endl;
+            if (nodes[i]->getId() == blackNodes[j]->getId()) {
+                LOG<<"true"<<endl;
+                isExist = true;
+                break;
             }
         }
-        if (!isExit) {
+        if (!isExist) {
             unBlackNodes.push_back(nodes[i]);
+            LOG<<"white"<<nodes[i]->getId()<<endl;
         }
     }
     return unBlackNodes;
 }
 
+
 vector<Node *> WSTC_controller::get_relevant_neighbors(Node *node) {
     vector<Node *> relevant_neighbors;
     Node *megaNode = nodesMatrixCoarse[node->getX() / 2][node->getY() / 2];
+//    LOG<< "mega node id: "<<megaNode->getId()<<endl;
     Direction dir;
     vector<Node *> neighbors = megaNode->getNeighbors();
+
+//    for(int i=0; i< neighbors.size();i++){
+//        LOG<< "general neighbor"<<neighbors[i]->getId()<<endl;
+//    }
+
     for (int i = 0; i < neighbors.size(); i++) {
         if (isExistEdge(megaNode, neighbors[i])) {
+//            LOG<< "has edge in mst" <<neighbors[i]->getId()<<endl;
             update_directions_matrix(megaNode, neighbors[i]);
         }
     }
     int xRelative = node->getX() % 2;
     int yRelative = node->getY() % 2;
+//    LOG<< "xRelative" <<xRelative<<endl;
+//    LOG<< "yRelative" <<yRelative<<endl;
     Direction validDir = dirMatrix[megaNode->getX()][megaNode->getY()];
+//    LOG<<"down1"<<validDir.down<<endl;
+//    LOG<<"up1"<<validDir.up<<endl;
+//    LOG<<"right1"<<validDir.right<<endl;
+//    LOG<<"left1"<<validDir.left<<endl;
+//    LOG<<"nodeID"<<nodesMatrixUni[node->getX()][node->getY()]->getId()<<endl;
+
     // down-left
     if (xRelative == 0 && yRelative == 0) {
         if (validDir.up && !validDir.left) {
@@ -221,17 +251,22 @@ void WSTC_controller::init_directions_matrix(int _width, int _height) {
 }
 
 void WSTC_controller::update_directions_matrix(Node *n1, Node *n2) {
-    Direction dir = {false, false, false, false};
     if (n1->getX() > n2->getX()) {
-        dir.down = true;
-    } else if (n1->getX() < n2->getX()) {
-        dir.up = true;
-    } else if (n1->getY() < n2->getY()) {
-        dir.right = true;
-    } else if (n1->getY() > n2->getY()) {
-        dir.left = true;
+        dirMatrix[n1->getX()][n1->getY()].down = true;
     }
-    dirMatrix[n1->getX()][n1->getY()] = dir;
+    if (n1->getX() < n2->getX()) {
+        dirMatrix[n1->getX()][n1->getY()].up = true;
+    }
+    if (n1->getY() < n2->getY()) {
+        dirMatrix[n1->getX()][n1->getY()].right = true;
+    }
+    if (n1->getY() > n2->getY()) {
+        dirMatrix[n1->getX()][n1->getY()].left = true;
+    }
+//    LOG<<"down"<<dirMatrix[n1->getX()][n1->getY()].down<<endl;
+//    LOG<<"up"<<dirMatrix[n1->getX()][n1->getY()].up<<endl;
+//    LOG<<"right"<<dirMatrix[n1->getX()][n1->getY()].right<<endl;
+//    LOG<<"left"<<dirMatrix[n1->getX()][n1->getY()].left<<endl;
 }
 
 bool WSTC_controller::isExistEdge(Node *node1, Node *node2) {
@@ -274,13 +309,11 @@ void WSTC_controller::prim(int numOfNodes) {
             }
         }
         if (neighborsMatrix[x][y] != -1) {
-            LOG << x << " - " << y << " :  " << neighborsMatrix[x][y] << endl;
             mst.push_back(make_pair(x, y));
         }
         selected[y] = true;
         numOfEdges++;
     }
-    LOG << mst.size() << endl;
     delete[] selected;
 }
 
