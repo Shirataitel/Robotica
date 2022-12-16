@@ -93,6 +93,9 @@ void WSTC_controller::setup() {
     // path
     init_path();
 
+    // print tree
+    save_tree_to_file("/home/oriya/krembot_sim/krembot_ws/files/mst.txt", coarseGrid, dirMatrix, h / 2, w / 2);
+
     free_memory();
 }
 
@@ -122,32 +125,32 @@ void WSTC_controller::init_path() {
 //        }
     }
 //    path.push_back(root);
-//    LOG<< "@@@@@@@@@@@@@@@@@@"<<endl;
-//    for(int i=0; i< path.size();i++){
-//        LOG<< i<<".   "<<path. getId()<<endl;
-//    }
+    LOG << "@@@@@@@@@@@@@@@@@@" << endl;
+    for (int i = 0; i < path.size(); i++) {
+        LOG << i << ".   " << path[i]->getId() << endl;
+    }
 }
 
 vector<Node *> WSTC_controller::get_unBlackNodes(vector<Node *> nodes, vector<Node *> blackNodes) {
     vector<Node *> unBlackNodes;
     bool isExist;
-//    LOG<<"********"<<endl;
-//    LOG<<"size"<<nodes.size()<<endl;
+    LOG << "********" << endl;
+    LOG << "size" << nodes.size() << endl;
     for (int i = 0; i < nodes.size(); i++) {
-//        LOG<<"---"<<endl;
+        LOG << "---" << endl;
         isExist = false;
-//        LOG<<"nodes"<<nodes[i]->getId()<<endl;
+        LOG << "nodes" << nodes[i]->getId() << endl;
         for (int j = 0; j < blackNodes.size(); j++) {
-//            LOG<<"black"<<blackNodes[j]->getId()<<endl;
+            LOG << "black" << blackNodes[j]->getId() << endl;
             if (nodes[i]->getId() == blackNodes[j]->getId()) {
-//                LOG<<"true"<<endl;
+                LOG << "true" << endl;
                 isExist = true;
                 break;
             }
         }
         if (!isExist) {
             unBlackNodes.push_back(nodes[i]);
-//            LOG<<"white"<<nodes[i]->getId()<<endl;
+            LOG << "white" << nodes[i]->getId() << endl;
         }
     }
     return unBlackNodes;
@@ -165,12 +168,6 @@ vector<Node *> WSTC_controller::get_relevant_neighbors(Node *node, Node *prev) {
 //        LOG<< "general neighbor"<<neighbors[i]->getId()<<endl;
 //    }
 
-    for (int i = 0; i < neighbors.size(); i++) {
-        if (isExistEdge(megaNode, neighbors[i])) {
-//            LOG<< "has edge in mst" <<neighbors[i]->getId()<<endl;
-            update_directions_matrix(megaNode, neighbors[i]);
-        }
-    }
     int xRelative = node->getX() % 2;
     int yRelative = node->getY() % 2;
 //    LOG<< "xRelative" <<xRelative<<endl;
@@ -196,11 +193,9 @@ vector<Node *> WSTC_controller::get_relevant_neighbors(Node *node, Node *prev) {
         if (validDir.left) {
             relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
         }
-        if (prev->getX() + 1 == node->getX()) {
+        // from left
+        if (prev->getY() + 1 == node->getY()  && validDir.up && validDir.left && !validDir.down) {
             relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
-        }
-        if (prev->getY() + 1 == node->getY()) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
         }
     }
         // down-right
@@ -217,11 +212,13 @@ vector<Node *> WSTC_controller::get_relevant_neighbors(Node *node, Node *prev) {
         if (validDir.left && !validDir.down) {
             relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
         }
-        if (prev->getX() + 1 == node->getX()) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
-        }
-        if (prev->getY() - 1 == node->getY()) {
+        // from down
+        if (prev->getX() + 1 == node->getX() && validDir.up && validDir.right && !validDir.down) {
             relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
+        }
+        // from right
+        if (prev->getY() - 1 == node->getY()) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
         }
     }
         // up-left
@@ -239,10 +236,10 @@ vector<Node *> WSTC_controller::get_relevant_neighbors(Node *node, Node *prev) {
             relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
         }
         if (prev->getX() - 1 == node->getX()) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
         }
         if (prev->getY() + 1 == node->getY()) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
         }
     }
         // up-right
@@ -260,10 +257,10 @@ vector<Node *> WSTC_controller::get_relevant_neighbors(Node *node, Node *prev) {
             relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
         }
         if (prev->getX() - 1 == node->getX()) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
         }
         if (prev->getY() - 1 == node->getY()) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
         }
     }
     return relevant_neighbors;
@@ -271,12 +268,23 @@ vector<Node *> WSTC_controller::get_relevant_neighbors(Node *node, Node *prev) {
 
 
 void WSTC_controller::init_directions_matrix(int _width, int _height) {
+    vector<Node *> neighbors;
     dirMatrix = new Direction *[_width];
     for (int i = 0; i < _width; i++) {
         dirMatrix[i] = new Direction[_height];
         for (int j = 0; j < _height; j++) {
             Direction d = {false, false, false, false};
             dirMatrix[i][j] = d;
+        }
+    }
+    for (int i = 0; i < _width; i++) {
+        for (int j = 0; j < _height; j++) {
+            neighbors = nodesMatrixCoarse[i][j]->getNeighbors();
+            for (int k = 0; k < neighbors.size(); k++) {
+                if (isExistEdge(nodesMatrixCoarse[i][j], neighbors[k])) {
+                    update_directions_matrix(nodesMatrixCoarse[i][j], neighbors[k]);
+                }
+            }
         }
     }
 }
@@ -345,6 +353,11 @@ void WSTC_controller::prim(int numOfNodes) {
         selected[y] = true;
         numOfEdges++;
     }
+//    LOG<<"numOfEdges"<< numOfEdges<<endl;
+//    LOG<<"mst.size()"<< mst.size()<<endl;
+//    for(int i=0; i<mst.size(); i++){
+//        LOG<<"first - "<< mst[i].first<<"## second - "<< mst[i].second <<endl;
+//    }
     delete[] selected;
 }
 
@@ -406,42 +419,42 @@ void WSTC_controller::free_memory() {
 //}
 
 void WSTC_controller::loop() {
-    LOG << "loopIndex: " << loopIndex << endl;
+//    LOG << "loopIndex: " << loopIndex << endl;
     krembot.loop();
     pos = posMsg.pos;
     degreeX = posMsg.degreeX;
     Node *curr, *next;
-    if (loopIndex == path.size() - 1) {
-        LOG << "Done" << endl;
-        krembot.Base.stop();
-    }
+//    if (loopIndex == path.size() - 1) {
+//        LOG << "Done" << endl;
+//        krembot.Base.stop();
+//    }
     curr = path[loopIndex];
     next = path[loopIndex + 1];
-    LOG << "curr Node: " << curr->getId() << endl;
-    LOG << "next Node: " << next->getId() << endl;
+//    LOG << "curr Node: " << curr->getId() << endl;
+//    LOG << "next Node: " << next->getId() << endl;
     CDegrees wantedDegree = calculateWantedDegree(curr, next);
-    LOG << "wantedDegree: " << wantedDegree.GetValue() << endl;
+//    LOG << "wantedDegree: " << wantedDegree.GetValue() << endl;
     switch (state) {
         case State::move: {
-            LOG << "MOVE" << endl;
+//            LOG << "MOVE" << endl;
             if (!got_to_cell(next->getY() * robotGridSize, next->getX() * robotGridSize)) {
                 krembot.Base.drive(100, 0);
-                LOG << "Not got to cell" << endl;
+//                LOG << "Not got to cell" << endl;
             } else {
                 krembot.Base.stop();
                 state = State::turn;
-                LOG << "Got to cell" << endl;
+//                LOG << "Got to cell" << endl;
                 loopIndex++;
             }
             break;
         }
         case State::turn: {
-            LOG << "TURN" << endl;
+//            LOG << "TURN" << endl;
             if (!got_to_orientation(wantedDegree)) {
-                LOG << "Not got to orientation" << endl;
+//                LOG << "Not got to orientation" << endl;
                 krembot.Base.drive(0, 90);
             } else {
-                LOG << "Got to orientation" << endl;
+//                LOG << "Got to orientation" << endl;
                 krembot.Base.stop();
                 state = State::move;
             }
@@ -706,6 +719,45 @@ void WSTC_controller::save_nodes_to_file(string name, Node ***grid, int _height,
         for (int col = 0; col < _width; col++) {
             int id = grid[row][col]->getId();
             m_cOutput << id << " ";
+        }
+        m_cOutput << endl;
+    }
+    m_cOutput.close();
+}
+
+void WSTC_controller::save_tree_to_file(string name, int **grid, Direction **dir, int _height, int _width) {
+    ofstream m_cOutput;
+    m_cOutput.open(name, ios_base::trunc | ios_base::out);
+    for (int row = _height - 1; row >= 0; row--) {
+        for (int col = 0; col < _width; col++) {
+            if (dir[row][col].up) {
+                m_cOutput << " " << "|" << " ";
+            } else {
+                m_cOutput << " " << " " << " ";
+            }
+        }
+        m_cOutput << "\n";
+        for (int col = 0; col < _width; col++) {
+            int id = grid[row][col];
+            if (dir[row][col].left) {
+                m_cOutput << "-";
+            } else {
+                m_cOutput << " ";
+            }
+            m_cOutput << grid[row][col];
+            if (dir[row][col].right) {
+                m_cOutput << "-";
+            } else {
+                m_cOutput << " ";
+            }
+        }
+        m_cOutput << "\n";
+        for (int col = 0; col < _width; col++) {
+            if (dir[row][col].down) {
+                m_cOutput << " " << "|" << " ";
+            } else {
+                m_cOutput << " " << " " << " ";
+            }
         }
         m_cOutput << endl;
     }

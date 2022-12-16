@@ -147,6 +147,7 @@ public:
 
     CDegrees calculateWantedDegree(Node *current_cell, Node *next_cell);
 
+    void save_tree_to_file(string name, int **grid,Direction** dir , int _height, int _width);
 
 };
 
