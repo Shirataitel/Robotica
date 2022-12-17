@@ -126,8 +126,8 @@ void WSTC_controller::init_path() {
 //            LOG<< "relevant neighbor"<<neighbors[i]->getId()<<endl;
 //        }
     }
-//    path.push_back(root);
-//    LOG << "@@@@@@@@@@@@@@@@@@" << endl;
+    path.push_back(root);
+    LOG << "path.size() = "<<path.size() << endl;
 //    for (int i = 0; i < path.size(); i++) {
 //        LOG << i << ".   " << path[i]->getId() << endl;
 //    }
@@ -592,6 +592,7 @@ void WSTC_controller::prim(int numOfNodes) {
 }
 
 void WSTC_controller::free_memory() {
+    // free uniformGrid and weightsUniform
     for (int i = 0; i < width / robotGridSize; i++) {
         delete[] uniformGrid[i];
         delete[] weightsUniform[i];
@@ -599,13 +600,17 @@ void WSTC_controller::free_memory() {
     delete[] uniformGrid;
     delete[] weightsUniform;
 
+    // free coarseGrid and weightsCoarse and dirMatrix
     for (int i = 0; i < width / robotGridSize / 2; i++) {
         delete[] coarseGrid[i];
         delete[] weightsCoarse[i];
+        delete[] dirMatrix[i];
     }
     delete[] coarseGrid;
     delete[] weightsCoarse;
+    delete[] dirMatrix;
 
+    // free nodesMatrixCoarse
     for (int i = 0; i < width / robotGridSize / 2; i++) {
         for (int j = 0; j < height / robotGridSize / 2; j++) {
             delete nodesMatrixCoarse[i][j];
@@ -614,11 +619,13 @@ void WSTC_controller::free_memory() {
     }
     delete[] nodesMatrixCoarse;
 
+    // free neighborsMatrix
     int numOfNodes = (width / robotGridSize / 2) * (height / robotGridSize / 2);
     for (int i = 0; i < numOfNodes; i++) {
         delete[] neighborsMatrix[i];
     }
     delete[] neighborsMatrix;
+
 }
 
 void WSTC_controller::loop() {
@@ -651,15 +658,8 @@ void WSTC_controller::loop() {
         }
         case State::turn: {
             if (!got_to_orientation(deg)) {
-                if(countTurns == 10){
-                    krembot.Base.drive(0, 5);
-                }
-                else{
-                    countTurns++;
-                    krembot.Base.drive(0, 20);
-                }
+                krembot.Base.drive(0, 20);
             } else {
-                countTurns = 0;
                 krembot.Base.stop();
                 state = State::move;
             }

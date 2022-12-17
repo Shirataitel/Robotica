@@ -26,13 +26,6 @@ struct Direction {
     bool left;
 };
 
-//struct Degrees {
-//    CDegrees up_degree = CDegrees(90);
-//    CDegrees left_degree = CDegrees(180);
-//    CDegrees down_degree = CDegrees(270);
-//    CDegrees right_degree = CDegrees(0);
-//};
-
 class Node {
 private:
     int id;
