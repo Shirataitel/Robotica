@@ -26,12 +26,12 @@ struct Direction {
     bool left;
 };
 
-struct Degrees {
-    CDegrees up_degree = CDegrees(90);
-    CDegrees left_degree = CDegrees(180);
-    CDegrees down_degree = CDegrees(270);
-    CDegrees right_degree = CDegrees(0);
-};
+//struct Degrees {
+//    CDegrees up_degree = CDegrees(90);
+//    CDegrees left_degree = CDegrees(180);
+//    CDegrees down_degree = CDegrees(270);
+//    CDegrees right_degree = CDegrees(0);
+//};
 
 class Node {
 private:
@@ -145,7 +145,7 @@ public:
 
     void free_memory();
 
-    CDegrees calculateWantedDegree(Node *current_cell, Node *next_cell);
+    static CDegrees calcDeg(Node *current, Node *next);
 
     void save_tree_to_file(string name, int **grid,Direction** dir , int _height, int _width);
 

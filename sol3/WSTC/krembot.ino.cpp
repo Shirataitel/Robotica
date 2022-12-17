@@ -21,13 +21,14 @@ CDegrees degreeX;
 int robotGridSize;
 vector<pair<int, int>> mst;
 vector<Node *> path;
-int loopIndex;
+int loopIndex, countTurns;
 //bool first_time = true;
 
 
 enum State {
     move,
-    turn
+    turn,
+    stop
 } state = turn;
 
 void WSTC_controller::setup() {
@@ -42,6 +43,7 @@ void WSTC_controller::setup() {
     width = mapMsg.width;
     robotGridSize = (int) (robotSize / resolution);
     loopIndex = 0;
+    countTurns = 0;
 
     // occupancyGrid
     save_grid_to_file("/home/oriya/krembot_sim/krembot_ws/WSTC/grid.txt", occupancyGrid, height, width);
@@ -108,7 +110,7 @@ void WSTC_controller::init_path() {
     Node *current = root;
     Node *prev = root;
     int i = 0;
-    while (true) {
+    while (i<10) {
         i++;
         if (neighbors.empty()) {
             break;
@@ -125,32 +127,32 @@ void WSTC_controller::init_path() {
 //        }
     }
 //    path.push_back(root);
-    LOG << "@@@@@@@@@@@@@@@@@@" << endl;
-    for (int i = 0; i < path.size(); i++) {
-        LOG << i << ".   " << path[i]->getId() << endl;
-    }
+//    LOG << "@@@@@@@@@@@@@@@@@@" << endl;
+//    for (int i = 0; i < path.size(); i++) {
+//        LOG << i << ".   " << path[i]->getId() << endl;
+//    }
 }
 
 vector<Node *> WSTC_controller::get_unBlackNodes(vector<Node *> nodes, vector<Node *> blackNodes) {
     vector<Node *> unBlackNodes;
     bool isExist;
-    LOG << "********" << endl;
-    LOG << "size" << nodes.size() << endl;
+//    LOG << "********" << endl;
+//    LOG << "size" << nodes.size() << endl;
     for (int i = 0; i < nodes.size(); i++) {
-        LOG << "---" << endl;
+//        LOG << "---" << endl;
         isExist = false;
-        LOG << "nodes" << nodes[i]->getId() << endl;
+//        LOG << "nodes" << nodes[i]->getId() << endl;
         for (int j = 0; j < blackNodes.size(); j++) {
-            LOG << "black" << blackNodes[j]->getId() << endl;
+//            LOG << "black" << blackNodes[j]->getId() << endl;
             if (nodes[i]->getId() == blackNodes[j]->getId()) {
-                LOG << "true" << endl;
+//                LOG << "true" << endl;
                 isExist = true;
                 break;
             }
         }
         if (!isExist) {
             unBlackNodes.push_back(nodes[i]);
-            LOG << "white" << nodes[i]->getId() << endl;
+//            LOG << "white" << nodes[i]->getId() << endl;
         }
     }
     return unBlackNodes;
@@ -183,312 +185,312 @@ vector<Node *> WSTC_controller::get_relevant_neighbors(Node *node, Node *prev) {
     if (xRelative == 0 && yRelative == 0) {
         // 1000 (1)
         if (validDir.up && !validDir.right && !validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
         }
         // 0100 (2)
         if (!validDir.up && validDir.right && !validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
         }
         // 1100 (3)
         if (validDir.up && validDir.right && !validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
         }
         // 0010 (4)
         if (!validDir.up && !validDir.right && validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
         }
         // 1010 (5)
         if (validDir.up && !validDir.right && validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
         }
         // 0110 (6)
         if (!validDir.up && validDir.right && validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
         }
         // 1110 (7)
         if (validDir.up && validDir.right && validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
         }
         // 0001 (8)
         if (!validDir.up && !validDir.right && !validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
         }
         // 1001 (9)
         if (validDir.up && !validDir.right && !validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
         }
         // 0101 (10)
         if (!validDir.up && validDir.right && !validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
         }
         // 1101 (11)
         if (validDir.up && validDir.right && !validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
         }
         // 0011 (12)
         if (!validDir.up && !validDir.right && validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
         }
         // 1011 (13)
         if (validDir.up && !validDir.right && validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
         }
         // 0111 (14)
         if (!validDir.up && validDir.right && validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
         }
         // 1111 (15)
         if (validDir.up && validDir.right && validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
         }
     }
         // down-right
     else if (xRelative == 0 && yRelative == 1) {
         // 1000 (1)
         if (validDir.up && !validDir.right && !validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
         }
         // 0100 (2)
         if (!validDir.up && validDir.right && !validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
         }
         // 1100 (3)
         if (validDir.up && validDir.right && !validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
         }
         // 0010 (4)
         if (!validDir.up && !validDir.right && validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
         }
         // 1010 (5)
         if (validDir.up && !validDir.right && validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
         }
         // 0110 (6)
         if (!validDir.up && validDir.right && validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
         }
         // 1110 (7)
         if (validDir.up && validDir.right && validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
         }
         // 0001 (8)
         if (!validDir.up && !validDir.right && !validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
         }
         // 1001 (9)
         if (validDir.up && !validDir.right && !validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
         }
         // 0101 (10)
         if (!validDir.up && validDir.right && !validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
         }
         // 1101 (11)
         if (validDir.up && validDir.right && !validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
         }
         // 0011 (12)
         if (!validDir.up && !validDir.right && validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
         }
         // 1011 (13)
         if (validDir.up && !validDir.right && validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
         }
         // 0111 (14)
         if (!validDir.up && validDir.right && validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
         }
         // 1111 (15)
         if (validDir.up && validDir.right && validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
         }
     }
         // up-left
     else if (xRelative == 1 && yRelative == 0) {
         // 1000 (1)
         if (validDir.up && !validDir.right && !validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
         }
         // 0100 (2)
         if (!validDir.up && validDir.right && !validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
         }
         // 1100 (3)
         if (validDir.up && validDir.right && !validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
         }
         // 0010 (4)
         if (!validDir.up && !validDir.right && validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
         }
         // 1010 (5)
         if (validDir.up && !validDir.right && validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
         }
         // 0110 (6)
         if (!validDir.up && validDir.right && validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
         }
         // 1110 (7)
         if (validDir.up && validDir.right && validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
         }
         // 0001 (8)
         if (!validDir.up && !validDir.right && !validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
         }
         // 1001 (9)
         if (validDir.up && !validDir.right && !validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
         }
         // 0101 (10)
         if (!validDir.up && validDir.right && !validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
         }
         // 1101 (11)
         if (validDir.up && validDir.right && !validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
         }
         // 0011 (12)
         if (!validDir.up && !validDir.right && validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
         }
         // 1011 (13)
         if (validDir.up && !validDir.right && validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
         }
         // 0111 (14)
         if (!validDir.up && validDir.right && validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
         }
         // 1111 (15)
         if (validDir.up && validDir.right && validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
         }
     }
         // up-right
     else if (xRelative == 1 && yRelative == 1) {
         // 1000 (1)
         if (validDir.up && !validDir.right && !validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
         }
         // 0100 (2)
         if (!validDir.up && validDir.right && !validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
         }
         // 1100 (3)
         if (validDir.up && validDir.right && !validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
         }
         // 0010 (4)
         if (!validDir.up && !validDir.right && validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
         }
         // 1010 (5)
         if (validDir.up && !validDir.right && validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
         }
         // 0110 (6)
         if (!validDir.up && validDir.right && validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
         }
         // 1110 (7)
         if (validDir.up && validDir.right && validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
         }
         // 0001 (8)
         if (!validDir.up && !validDir.right && !validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
         }
         // 1001 (9)
         if (validDir.up && !validDir.right && !validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
         }
         // 0101 (10)
         if (!validDir.up && validDir.right && !validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
         }
         // 1101 (11)
         if (validDir.up && validDir.right && !validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
         }
         // 0011 (12)
         if (!validDir.up && !validDir.right && validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
         }
         // 1011 (13)
         if (validDir.up && !validDir.right && validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
         }
         // 0111 (14)
         if (!validDir.up && validDir.right && validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
         }
         // 1111 (15)
         if (validDir.up && validDir.right && validDir.down && validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
         }
     }
     return relevant_neighbors;
@@ -619,88 +621,78 @@ void WSTC_controller::free_memory() {
     delete[] neighborsMatrix;
 }
 
-//void WSTC_controller::loop() {
-//    krembot.loop();
-//
-//    pos = posMsg.pos;
-//    degreeX = posMsg.degreeX;
-//
-//    switch (state) {
-//        case State::move: {
-//            if (!got_to_cell(col + 3, row)) {
-//                krembot.Base.drive(100, 0);
-//            } else {
-//                krembot.Base.stop();
-//            }
-//            break;
-//        }
-//        case State::turn: {
-//            if (!got_to_orientation(CDegrees(0))) {
-//                krembot.Base.drive(0, 20);
-//            } else {
-//                krembot.Base.stop();
-//                state = State::move;
-//            }
-//            break;
-//        }
-//    }
-//}
-
 void WSTC_controller::loop() {
-//    LOG << "loopIndex: " << loopIndex << endl;
     krembot.loop();
+
     pos = posMsg.pos;
     degreeX = posMsg.degreeX;
-    Node *curr, *next;
-//    if (loopIndex == path.size() - 1) {
-//        LOG << "Done" << endl;
-//        krembot.Base.stop();
-//    }
-    curr = path[loopIndex];
-    next = path[loopIndex + 1];
-//    LOG << "curr Node: " << curr->getId() << endl;
-//    LOG << "next Node: " << next->getId() << endl;
-    CDegrees wantedDegree = calculateWantedDegree(curr, next);
-//    LOG << "wantedDegree: " << wantedDegree.GetValue() << endl;
+    Node *current = nullptr;
+    Node *next = nullptr;
+
+    if (loopIndex < path.size() - 2) {
+        current = path[loopIndex];
+        next = path[loopIndex + 1];
+    } else {
+        LOG<<"need to finish" <<endl;
+        state = State::stop;
+    }
+    CDegrees deg = calcDeg(current, next);
     switch (state) {
         case State::move: {
-//            LOG << "MOVE" << endl;
-            if (!got_to_cell(next->getY() * robotGridSize, next->getX() * robotGridSize)) {
+            if (!got_to_cell(next->getY()*robotGridSize+5, next->getX()*robotGridSize+5)) {
                 krembot.Base.drive(100, 0);
-//                LOG << "Not got to cell" << endl;
             } else {
+                LOG<<"loopIndex: "<< loopIndex <<endl;
                 krembot.Base.stop();
-                state = State::turn;
-//                LOG << "Got to cell" << endl;
                 loopIndex++;
+                state = State::turn;
             }
             break;
         }
         case State::turn: {
-//            LOG << "TURN" << endl;
-            if (!got_to_orientation(wantedDegree)) {
-//                LOG << "Not got to orientation" << endl;
-                krembot.Base.drive(0, 90);
+            if (!got_to_orientation(deg)) {
+                if(countTurns == 10){
+                    krembot.Base.drive(0, 5);
+                }
+                else{
+                    countTurns++;
+                    krembot.Base.drive(0, 20);
+                }
             } else {
-//                LOG << "Got to orientation" << endl;
+                countTurns = 0;
                 krembot.Base.stop();
                 state = State::move;
             }
             break;
         }
+        case State::stop: {
+            krembot.Base.stop();
+        }
     }
 }
 
-CDegrees WSTC_controller::calculateWantedDegree(Node *current_cell, Node *next_cell) {
-    Degrees deg;
-    if (current_cell->getX() < next_cell->getX())
-        return deg.up_degree;
-    if (current_cell->getX() > next_cell->getX())
-        return deg.down_degree;
-    if (current_cell->getY() < next_cell->getY())
-        return deg.right_degree;
-    if (current_cell->getY() > next_cell->getY())
-        return deg.left_degree;
+
+CDegrees WSTC_controller::calcDeg(Node *current, Node *next) {
+    // up
+    if (current->getX() < next->getX()) {
+        return CDegrees(90);
+    }
+    // right
+    else if (current->getY() < next->getY()) {
+        return CDegrees(0);
+    }
+    // down
+    else if (current->getX() > next->getX()) {
+        return CDegrees(270);
+    }
+    // left
+    else if(current->getY() > next->getY()){
+        return CDegrees(180);
+    }
+    // never reaches this condition
+    else{
+        return CDegrees(0);
+    }
 }
 
 void WSTC_controller::init_nodes_matrix_coarse(int _width, int _height) {
@@ -888,7 +880,7 @@ void WSTC_controller::pos_to_col_row_coarse(int *pCol, int *pRow) {
 }
 
 bool WSTC_controller::got_to_cell(int _col, int _row) {
-    Real threshold = 0.0005;
+    Real threshold = 0.01;
     CVector2 cell_center_pos;
     cell_center_pos.Set(_col * resolution, _row * resolution);
     cell_center_pos += origin;
