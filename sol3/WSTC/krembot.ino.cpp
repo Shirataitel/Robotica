@@ -181,86 +181,314 @@ vector<Node *> WSTC_controller::get_relevant_neighbors(Node *node, Node *prev) {
 
     // down-left
     if (xRelative == 0 && yRelative == 0) {
-        if (validDir.up && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
+        // 1000 (1)
+        if (validDir.up && !validDir.right && !validDir.down && !validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
         }
-        if (validDir.right && !validDir.down) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
+        // 0100 (2)
+        if (!validDir.up && validDir.right && !validDir.down && !validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
         }
-        if (validDir.down) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
+        // 1100 (3)
+        if (validDir.up && validDir.right && !validDir.down && !validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
         }
-        if (validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+        // 0010 (4)
+        if (!validDir.up && !validDir.right && validDir.down && !validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
         }
-        // from left
-        if (prev->getY() + 1 == node->getY()  && validDir.up && validDir.left && !validDir.down) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
+        // 1010 (5)
+        if (validDir.up && !validDir.right && validDir.down && !validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+        }
+        // 0110 (6)
+        if (!validDir.up && validDir.right && validDir.down && !validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+        }
+        // 1110 (7)
+        if (validDir.up && validDir.right && validDir.down && !validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+        }
+        // 0001 (8)
+        if (!validDir.up && !validDir.right && !validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+        }
+        // 1001 (9)
+        if (validDir.up && !validDir.right && !validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+        }
+        // 0101 (10)
+        if (!validDir.up && validDir.right && !validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+        }
+        // 1101 (11)
+        if (validDir.up && validDir.right && !validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+        }
+        // 0011 (12)
+        if (!validDir.up && !validDir.right && validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+        }
+        // 1011 (13)
+        if (validDir.up && !validDir.right && validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+        }
+        // 0111 (14)
+        if (!validDir.up && validDir.right && validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+        }
+        // 1111 (15)
+        if (validDir.up && validDir.right && validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
         }
     }
         // down-right
     else if (xRelative == 0 && yRelative == 1) {
-        if (validDir.up && !validDir.right) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
+        // 1000 (1)
+        if (validDir.up && !validDir.right && !validDir.down && !validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
         }
-        if (validDir.right) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
+        // 0100 (2)
+        if (!validDir.up && validDir.right && !validDir.down && !validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
         }
-        if (validDir.down) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
+        // 1100 (3)
+        if (validDir.up && validDir.right && !validDir.down && !validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
         }
-        if (validDir.left && !validDir.down) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+        // 0010 (4)
+        if (!validDir.up && !validDir.right && validDir.down && !validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
         }
-        // from down
-        if (prev->getX() + 1 == node->getX() && validDir.up && validDir.right && !validDir.down) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
+        // 1010 (5)
+        if (validDir.up && !validDir.right && validDir.down && !validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
         }
-        // from right
-        if (prev->getY() - 1 == node->getY()) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+        // 0110 (6)
+        if (!validDir.up && validDir.right && validDir.down && !validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+        }
+        // 1110 (7)
+        if (validDir.up && validDir.right && validDir.down && !validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+        }
+        // 0001 (8)
+        if (!validDir.up && !validDir.right && !validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+        }
+        // 1001 (9)
+        if (validDir.up && !validDir.right && !validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+        }
+        // 0101 (10)
+        if (!validDir.up && validDir.right && !validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+        }
+        // 1101 (11)
+        if (validDir.up && validDir.right && !validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+        }
+        // 0011 (12)
+        if (!validDir.up && !validDir.right && validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+        }
+        // 1011 (13)
+        if (validDir.up && !validDir.right && validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+        }
+        // 0111 (14)
+        if (!validDir.up && validDir.right && validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+        }
+        // 1111 (15)
+        if (validDir.up && validDir.right && validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
         }
     }
         // up-left
     else if (xRelative == 1 && yRelative == 0) {
-        if (validDir.up) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
+        // 1000 (1)
+        if (validDir.up && !validDir.right && !validDir.down && !validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
         }
-        if (validDir.right && !validDir.up) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
+        // 0100 (2)
+        if (!validDir.up && validDir.right && !validDir.down && !validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
         }
-        if (validDir.down && !validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
+        // 1100 (3)
+        if (validDir.up && validDir.right && !validDir.down && !validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
         }
-        if (validDir.left) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+        // 0010 (4)
+        if (!validDir.up && !validDir.right && validDir.down && !validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
         }
-        if (prev->getX() - 1 == node->getX()) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
+        // 1010 (5)
+        if (validDir.up && !validDir.right && validDir.down && !validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
         }
-        if (prev->getY() + 1 == node->getY()) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
+        // 0110 (6)
+        if (!validDir.up && validDir.right && validDir.down && !validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+        }
+        // 1110 (7)
+        if (validDir.up && validDir.right && validDir.down && !validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+        }
+        // 0001 (8)
+        if (!validDir.up && !validDir.right && !validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+        }
+        // 1001 (9)
+        if (validDir.up && !validDir.right && !validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+        }
+        // 0101 (10)
+        if (!validDir.up && validDir.right && !validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+        }
+        // 1101 (11)
+        if (validDir.up && validDir.right && !validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+        }
+        // 0011 (12)
+        if (!validDir.up && !validDir.right && validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+        }
+        // 1011 (13)
+        if (validDir.up && !validDir.right && validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+        }
+        // 0111 (14)
+        if (!validDir.up && validDir.right && validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+        }
+        // 1111 (15)
+        if (validDir.up && validDir.right && validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
         }
     }
         // up-right
     else if (xRelative == 1 && yRelative == 1) {
-        if (validDir.up) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
+        // 1000 (1)
+        if (validDir.up && !validDir.right && !validDir.down && !validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
         }
-        if (validDir.right) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() + 1]);
+        // 0100 (2)
+        if (!validDir.up && validDir.right && !validDir.down && !validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
         }
-        if (validDir.down && !validDir.right) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
+        // 1100 (3)
+        if (validDir.up && validDir.right && !validDir.down && !validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
         }
-        if (validDir.left && !validDir.up) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+        // 0010 (4)
+        if (!validDir.up && !validDir.right && validDir.down && !validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
         }
-        if (prev->getX() - 1 == node->getX()) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
+        // 1010 (5)
+        if (validDir.up && !validDir.right && validDir.down && !validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
         }
-        if (prev->getY() - 1 == node->getY()) {
-            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY() - 1]);
+        // 0110 (6)
+        if (!validDir.up && validDir.right && validDir.down && !validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+        }
+        // 1110 (7)
+        if (validDir.up && validDir.right && validDir.down && !validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+        }
+        // 0001 (8)
+        if (!validDir.up && !validDir.right && !validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+        }
+        // 1001 (9)
+        if (validDir.up && !validDir.right && !validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+        }
+        // 0101 (10)
+        if (!validDir.up && validDir.right && !validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+        }
+        // 1101 (11)
+        if (validDir.up && validDir.right && !validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+        }
+        // 0011 (12)
+        if (!validDir.up && !validDir.right && validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+        }
+        // 1011 (13)
+        if (validDir.up && !validDir.right && validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()-1][node->getY()]);
+        }
+        // 0111 (14)
+        if (!validDir.up && validDir.right && validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()-1]);
+        }
+        // 1111 (15)
+        if (validDir.up && validDir.right && validDir.down && validDir.left) {
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()][node->getY()+1]);
+            relevant_neighbors.push_back(nodesMatrixUni[node->getX()+1][node->getY()]);
         }
     }
     return relevant_neighbors;
