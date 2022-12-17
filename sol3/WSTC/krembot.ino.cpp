@@ -110,7 +110,7 @@ void WSTC_controller::init_path() {
     Node *current = root;
     Node *prev = root;
     int i = 0;
-    while (i<10) {
+    while (true) {
         i++;
         if (neighbors.empty()) {
             break;
@@ -628,15 +628,15 @@ void WSTC_controller::loop() {
     degreeX = posMsg.degreeX;
     Node *current = nullptr;
     Node *next = nullptr;
-
-    if (loopIndex < path.size() - 2) {
+    CDegrees deg;
+    if (loopIndex < (path.size()-1)) {
         current = path[loopIndex];
         next = path[loopIndex + 1];
+        deg = calcDeg(current, next);
     } else {
         LOG<<"need to finish" <<endl;
         state = State::stop;
     }
-    CDegrees deg = calcDeg(current, next);
     switch (state) {
         case State::move: {
             if (!got_to_cell(next->getY()*robotGridSize+5, next->getX()*robotGridSize+5)) {
@@ -880,7 +880,7 @@ void WSTC_controller::pos_to_col_row_coarse(int *pCol, int *pRow) {
 }
 
 bool WSTC_controller::got_to_cell(int _col, int _row) {
-    Real threshold = 0.01;
+    Real threshold = 0.0005;
     CVector2 cell_center_pos;
     cell_center_pos.Set(_col * resolution, _row * resolution);
     cell_center_pos += origin;
