@@ -1,3 +1,6 @@
+// Shira Taitelbaum 322207341
+// Oriya Yehudai 211544150
+
 #include "krembot.ino.h"
 
 #define INF 9999999
@@ -872,7 +875,7 @@ void WSTC_controller::pos_to_col_row_coarse(int *pCol, int *pRow) {
 }
 
 bool WSTC_controller::got_to_cell(int _col, int _row) {
-    Real threshold = 0.005;
+    Real threshold = 0.0009;
     CVector2 cell_center_pos;
     cell_center_pos.Set(_col * resolution, _row * resolution);
     cell_center_pos += origin;
