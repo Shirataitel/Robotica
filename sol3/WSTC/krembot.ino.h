@@ -48,10 +48,6 @@ public:
 
     bool isObstacle() const;
 
-    bool isCoarseNode() const;
-
-    bool isEqual(Node *otherNode);
-
     vector<Node *> getNeighbors();
 
     void addNeighbor(Node *n);
@@ -90,57 +86,57 @@ public:
         loop();
     }
 
-    void init_grid(int **oldGrid, int **oldWeights, int D, int _width, int _height);
+    static void init_grid(int **oldGrid, int **oldWeights, int D, int _width, int _height);
 
-    bool got_to_cell(int _col, int _row);
+    static bool got_to_cell(int _col, int _row);
 
-    bool got_to_orientation(CDegrees degree);
+    static bool got_to_orientation(CDegrees degree);
 
-    void pos_to_col_row(CVector2 pos, int *pCol, int *pRow);
+    static void pos_to_col_row(CVector2 pos, int *pCol, int *pRow);
 
-    void pos_to_col_row_uniform(int *pCol, int *pRow);
+    static void pos_to_col_row_uniform(int *pCol, int *pRow);
 
-    void pos_to_col_row_coarse(int *pCol, int *pRow);
+    static void pos_to_col_row_coarse(int *pCol, int *pRow);
 
-    void save_grid_to_file(string name, int **grid, int _height, int _width);
+    static void save_grid_to_file(string name, int **grid, int _height, int _width);
 
-    void save_grid_to_file_with_robot_location(string name, int **grid,
+    static void save_grid_to_file_with_robot_location(string name, int **grid,
                                                int _height, int _width,
                                                int robot_col, int robot_row);
 
-    void init_nodes_matrix_coarse(int _width, int _height);
+    static void init_nodes_matrix_coarse(int _width, int _height);
 
-    void init_nodes_matrix_uniform(int _width, int _height);
+    static void init_nodes_matrix_uniform(int _width, int _height);
 
-    void init_neighbors_matrix(int _width, int _height);
+    static void init_neighbors_matrix(int _width, int _height);
 
-    void add_edge(Node *node, int _width, int _height);
+    static void add_edge(Node *node, int _width, int _height);
 
-    void check_valid_edge(int newX, int newY, Node *node);
+    static void check_valid_edge(int newX, int newY, Node *node);
 
-    void save_nodes_to_file(string name, Node ***grid, int _height, int _width);
+    static void save_nodes_to_file(string name, Node ***grid, int _height, int _width);
 
-    void save_edges_to_file(string name, int _height, int _width);
+    static void save_edges_to_file(string name, int _height, int _width);
 
-    void prim(int numOfNodes);
+    static void prim(int numOfNodes);
 
-    bool isExistEdge(Node *node1, Node *node2);
+    static bool isExistEdge(Node *node1, Node *node2);
 
-    void init_directions_matrix(int _width, int _height);
+    static void init_directions_matrix(int _width, int _height);
 
-    void update_directions_matrix(Node *n1, Node *n2);
+    static void update_directions_matrix(Node *n1, Node *n2);
 
-    vector<Node *> get_relevant_neighbors(Node *node);
+    static vector<Node *> get_relevant_neighbors(Node *node);
 
-    void init_path();
+    static void init_path();
 
-    vector<Node *> get_unBlackNodes(vector<Node *> nodes, vector<Node *> blackNodes);
+    static vector<Node *> get_unBlackNodes(vector<Node *> nodes, vector<Node *> blackNodes);
 
-    void free_memory();
+    static void free_memory();
 
     static CDegrees calcDeg(Node *current, Node *next);
-
-    void save_tree_to_file(string name, int **grid,Direction** dir , int _height, int _width);
+    static int calc_Angular_spd(CDegrees deg);
+    static void save_tree_to_file(string name, int **grid,Direction** dir , int _height, int _width);
 
 };
 
