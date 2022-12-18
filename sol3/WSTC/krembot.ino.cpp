@@ -120,7 +120,7 @@ void WSTC_controller::init_path() {
         path.push_back(current);
         blackNodes.push_back(current);
 //        LOG<<"currentID"<<current->getId()<<endl;
-        neighbors = get_relevant_neighbors(current, prev);
+        neighbors = get_relevant_neighbors(current);
         neighbors = get_unBlackNodes(neighbors, blackNodes);
 //        for(int i=0; i< neighbors.size();i++){
 //            LOG<< "relevant neighbor"<<neighbors[i]->getId()<<endl;
@@ -159,7 +159,7 @@ vector<Node *> WSTC_controller::get_unBlackNodes(vector<Node *> nodes, vector<No
 }
 
 
-vector<Node *> WSTC_controller::get_relevant_neighbors(Node *node, Node *prev) {
+vector<Node *> WSTC_controller::get_relevant_neighbors(Node *node) {
     vector<Node *> relevant_neighbors;
     Node *megaNode = nodesMatrixCoarse[node->getX() / 2][node->getY() / 2];
 //    LOG<< "mega node id: "<<megaNode->getId()<<endl;
@@ -658,7 +658,7 @@ void WSTC_controller::loop() {
         }
         case State::turn: {
             if (!got_to_orientation(deg)) {
-                krembot.Base.drive(0, 20);
+                krembot.Base.drive(0, 15);
             } else {
                 krembot.Base.stop();
                 state = State::move;

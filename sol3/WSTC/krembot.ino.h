@@ -130,7 +130,7 @@ public:
 
     void update_directions_matrix(Node *n1, Node *n2);
 
-    vector<Node *> get_relevant_neighbors(Node *node,  Node *prev);
+    vector<Node *> get_relevant_neighbors(Node *node);
 
     void init_path();
 
