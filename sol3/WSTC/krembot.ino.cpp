@@ -5,20 +5,27 @@
 
 #define INF 9999999
 
+// const degrees of possible directions
 const CDegrees upDeg = CDegrees(90);
 const CDegrees rightDeg = CDegrees(0);
 const CDegrees leftDeg = CDegrees(180);
 const CDegrees downDeg = CDegrees(270);
+// first location of the robot - col, row - in occupancyGrid, colU, rowU - in uniformGrid, colC, rowC - occupancyGrid
 int col, row, colU, rowU, colC, rowC;
+// grids and weights
 int **occupancyGrid;
 int **uniformGrid;
 int **coarseGrid;
 int **weights;
 int **weightsUniform;
 int **weightsCoarse;
+// matrix of valid directions(edges) of each node in coarseGrid
 Direction **dirMatrix;
+// nodes matrix of coarseGrid
 Node ***nodesMatrixCoarse;
+// nodes matrix of uniformGrid
 Node ***nodesMatrixUni;
+// neighbors matrix of coarseGrid
 int **neighborsMatrix;
 Real resolution;
 CVector2 origin;
@@ -26,8 +33,11 @@ int height, width;
 CVector2 pos;
 CDegrees degreeX;
 int robotGridSize;
+// minimum spanning tree - contains pairs of ID's of nodes
 vector<pair<int, int>> mst;
+// the final path of the robot - contains Nodes of the uniform grid
 vector<Node *> path;
+// count for the loop function
 int loopIndex;
 
 
@@ -51,14 +61,14 @@ void WSTC_controller::setup() {
     loopIndex = 0;
 
     // occupancyGrid
-//    save_grid_to_file("/home/oriya/krembot_sim/krembot_ws/WSTC/grid.txt", occupancyGrid, height, width);
+    save_grid_to_file("/home/oriya/krembot_sim/krembot_ws/WSTC/grid.txt", occupancyGrid, height, width);
     pos = posMsg.pos;
     degreeX = posMsg.degreeX;
     pos_to_col_row(pos, &col, &row);
-//    save_grid_to_file_with_robot_location("/home/oriya/krembot_sim/krembot_ws/files/grid-with-robot-loc.txt",occupancyGrid, height, width, col, row);
+    save_grid_to_file_with_robot_location("/home/oriya/krembot_sim/krembot_ws/files/grid-with-robot-loc.txt",occupancyGrid, height, width, col, row);
 
 
-    // uniformGrid
+    // initialize uniformGrid and weightsUniform
     init_grid(occupancyGrid, weights, robotGridSize, width, height);
     int h = height / robotGridSize;
     int w = width / robotGridSize;
@@ -68,33 +78,33 @@ void WSTC_controller::setup() {
     save_grid_to_file_with_robot_location("/home/oriya/krembot_sim/krembot_ws/files/uniform-with-robot-loc.txt",uniformGrid, h, w, colU, rowU);
 
 
-    // coarseGrid
+    // initialize coarseGrid and weights Coarse
     init_grid(uniformGrid, weightsUniform, 2, w, h);
     save_grid_to_file("/home/oriya/krembot_sim/krembot_ws/files/coarse-grid.txt", coarseGrid, h / 2, w / 2);
     save_grid_to_file("/home/oriya/krembot_sim/krembot_ws/files/coarse-weights.txt", weightsCoarse, h / 2, w / 2);
     pos_to_col_row_coarse(&colU, &rowU);
     save_grid_to_file_with_robot_location("/home/oriya/krembot_sim/krembot_ws/files/coarse-with-robot-loc.txt",coarseGrid, h / 2, w / 2, colC, rowC);
 
-    // nodesMatrixUniform
+    // initialize nodesMatrixUniform
     init_nodes_matrix_uniform(w, h);
     save_nodes_to_file("/home/oriya/krembot_sim/krembot_ws/files/nodesUni.txt", nodesMatrixUni, h, w);
 
-    // nodesMatrixCoarse
+    // initialize nodesMatrixCoarse
     init_nodes_matrix_coarse(w / 2, h / 2);
     save_nodes_to_file("/home/oriya/krembot_sim/krembot_ws/files/nodesCoarse.txt", nodesMatrixCoarse, h / 2, w / 2);
 
-    // neighborsMatrix
+    // initialize neighborsMatrix
     int numOfNodes = (w / 2) * (h / 2);
     init_neighbors_matrix(w / 2, h / 2);
     save_edges_to_file("/home/oriya/krembot_sim/krembot_ws/files/neighbors.txt", numOfNodes, numOfNodes);
 
-    // MST
+    // initialize MST
     prim(numOfNodes);
 
-    // directionsMatrix
+    // initialize directionsMatrix
     init_directions_matrix(w / 2, h / 2);
 
-    // path
+    // initialize path
     init_path();
 
     // print tree
@@ -102,11 +112,13 @@ void WSTC_controller::setup() {
 
     free_memory();
 
-    LOG<<"robotGridSize: "<< robotGridSize <<endl;
 }
 
+/// function that initializes the path for the robot movement
 void WSTC_controller::init_path() {
+    // the first node in the path is the cell of the robot position in the uniform grid
     Node *root = nodesMatrixUni[rowU][colU];
+    // blackNodes keeps nodes that already exists in path
     vector<Node *> blackNodes;
     vector<Node *> neighbors;
     neighbors.push_back(root);
@@ -116,15 +128,21 @@ void WSTC_controller::init_path() {
     while (true) {
         i++;
         if (neighbors.empty()) {
+            // if there are no more neighbors - stop the loop
             break;
         }
         prev = current;
         current = neighbors.front();
+        // add current to path
         path.push_back(current);
+        // add current to blackNodes
         blackNodes.push_back(current);
+        // find the neighbors cells of the current node
         neighbors = get_relevant_neighbors(current);
+        // delete from neighbors nodes which already in path
         neighbors = get_unBlackNodes(neighbors, blackNodes);
     }
+    // add the root to path - to create a circular path
     path.push_back(root);
     LOG << "path.size() = " << path.size() << endl;
     for (int i = 0; i < path.size(); i++) {
@@ -132,34 +150,44 @@ void WSTC_controller::init_path() {
     }
 }
 
+/// function that returns nodes which are not in the blackNodes vector
 vector<Node *> WSTC_controller::get_unBlackNodes(vector<Node *> nodes, vector<Node *> blackNodes) {
     vector<Node *> unBlackNodes;
     bool isExist;
     for (int i = 0; i < nodes.size(); i++) {
         isExist = false;
+        // for each node check if it exists in the blacNodes
         for (int j = 0; j < blackNodes.size(); j++) {
             if (nodes[i]->getId() == blackNodes[j]->getId()) {
+                // if exits - turn on flag
                 isExist = true;
                 break;
             }
         }
         if (!isExist) {
+            // if not exits - add to unBlackNodes
             unBlackNodes.push_back(nodes[i]);
         }
     }
     return unBlackNodes;
 }
 
-
+/// function that returns the neighbors of a node in the uniform grid according to the mst
 vector<Node *> WSTC_controller::get_relevant_neighbors(Node *node) {
     vector<Node *> relevant_neighbors;
+    // find the megaCell that corresponds to the node in the coarse grid
     Node *megaNode = nodesMatrixCoarse[node->getX() / 2][node->getY() / 2];
-    vector<Node *> neighbors = megaNode->getNeighbors();
+    // find the position of the node in its megaCell
     int xRelative = node->getX() % 2;
     int yRelative = node->getY() % 2;
+    // get the valid directions (edges) of the megaCell
     Direction validDir = dirMatrix[megaNode->getX()][megaNode->getY()];
 
-    // down-left
+    /*** here we add the neighbors of the node in the uniformGrid by dividing to different cases of the node location
+      in its megaCell. In each case, we checked all possible cases of edges in the megaCell in order to calculate
+      which neighbors is relevant ***/
+
+    // position of the node in its megaCell is down-left (0,0)
     if (xRelative == 0 && yRelative == 0) {
         // 1000 (1)
         if (validDir.up && !validDir.right && !validDir.down && !validDir.left) {
@@ -237,7 +265,7 @@ vector<Node *> WSTC_controller::get_relevant_neighbors(Node *node) {
             relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
         }
     }
-        // down-right
+        // position of the node in its megaCell is down-right (0,1)
     else if (xRelative == 0 && yRelative == 1) {
         // 1000 (1)
         if (validDir.up && !validDir.right && !validDir.down && !validDir.left) {
@@ -315,7 +343,7 @@ vector<Node *> WSTC_controller::get_relevant_neighbors(Node *node) {
             relevant_neighbors.push_back(nodesMatrixUni[node->getX() - 1][node->getY()]);
         }
     }
-        // up-left
+        // position of the node in its megaCell is up-left (1,0)
     else if (xRelative == 1 && yRelative == 0) {
         // 1000 (1)
         if (validDir.up && !validDir.right && !validDir.down && !validDir.left) {
@@ -393,7 +421,7 @@ vector<Node *> WSTC_controller::get_relevant_neighbors(Node *node) {
             relevant_neighbors.push_back(nodesMatrixUni[node->getX() + 1][node->getY()]);
         }
     }
-        // up-right
+        // position of the node in its megaCell is up-right (1,1)
     else if (xRelative == 1 && yRelative == 1) {
         // 1000 (1)
         if (validDir.up && !validDir.right && !validDir.down && !validDir.left) {
@@ -474,12 +502,13 @@ vector<Node *> WSTC_controller::get_relevant_neighbors(Node *node) {
     return relevant_neighbors;
 }
 
-
+/// function that initializes the dirMatrix
 void WSTC_controller::init_directions_matrix(int _width, int _height) {
     vector<Node *> neighbors;
     dirMatrix = new Direction *[_width];
     for (int i = 0; i < _width; i++) {
         dirMatrix[i] = new Direction[_height];
+        // fill all the matrix cells with Direction object that initialized to false
         for (int j = 0; j < _height; j++) {
             Direction d = {false, false, false, false};
             dirMatrix[i][j] = d;
@@ -488,8 +517,10 @@ void WSTC_controller::init_directions_matrix(int _width, int _height) {
     for (int i = 0; i < _width; i++) {
         for (int j = 0; j < _height; j++) {
             neighbors = nodesMatrixCoarse[i][j]->getNeighbors();
+            // run over the neighbors of a specific node
             for (int k = 0; k < neighbors.size(); k++) {
                 if (isExistEdge(nodesMatrixCoarse[i][j], neighbors[k])) {
+                    // if there is an edge in the mst between the specific node and its neighbor - update the dirMatrix
                     update_directions_matrix(nodesMatrixCoarse[i][j], neighbors[k]);
                 }
             }
@@ -497,21 +528,27 @@ void WSTC_controller::init_directions_matrix(int _width, int _height) {
     }
 }
 
+/// function that updates the dirMatrix according to two nodes
 void WSTC_controller::update_directions_matrix(Node *n1, Node *n2) {
+    // n2 is below n1
     if (n1->getX() > n2->getX()) {
         dirMatrix[n1->getX()][n1->getY()].down = true;
     }
+    // n2 is above n1
     if (n1->getX() < n2->getX()) {
         dirMatrix[n1->getX()][n1->getY()].up = true;
     }
+    // n2 is to the right of n1
     if (n1->getY() < n2->getY()) {
         dirMatrix[n1->getX()][n1->getY()].right = true;
     }
+    // n2 is to the left of n1
     if (n1->getY() > n2->getY()) {
         dirMatrix[n1->getX()][n1->getY()].left = true;
     }
 }
 
+/// function that returns true if there is an edge between two nodes in the mst, and false otherwise
 bool WSTC_controller::isExistEdge(Node *node1, Node *node2) {
     for (int i = 0; i < mst.size(); i++) {
         if (node1->getId() == mst[i].first && node2->getId() == mst[i].second) {
@@ -523,7 +560,9 @@ bool WSTC_controller::isExistEdge(Node *node1, Node *node2) {
     return false;
 }
 
+/// function that initializes the mst according to prim algorithm
 void WSTC_controller::prim(int numOfNodes) {
+    // startNode is the cell of the robot location on the coarse grid
     Node *startNode = nodesMatrixCoarse[rowC][colC];
     int startNodeId = startNode->getId();
     int numOfEdges = 0;
@@ -552,6 +591,7 @@ void WSTC_controller::prim(int numOfNodes) {
             }
         }
         if (neighborsMatrix[x][y] != -1) {
+            // add an edge to the mst as a pair of nodes' ID's
             mst.push_back(make_pair(x, y));
         }
         selected[y] = true;
@@ -560,6 +600,7 @@ void WSTC_controller::prim(int numOfNodes) {
     delete[] selected;
 }
 
+/// function that frees all the memory which was allocated dynamically
 void WSTC_controller::free_memory() {
     // free uniformGrid and weightsUniform
     for (int i = 0; i < width / robotGridSize; i++) {
@@ -599,26 +640,30 @@ void WSTC_controller::free_memory() {
 
 void WSTC_controller::loop() {
     krembot.loop();
-
     pos = posMsg.pos;
     degreeX = posMsg.degreeX;
     Node *current = nullptr;
     Node *next = nullptr;
     CDegrees deg;
-    int speed, xRelative, yRelative;
+    int angularSpd, xRelative, yRelative;
     if (loopIndex < (path.size() - 1)) {
+        // this handles the case that the robot didn't cover all the path nodes
         current = path[loopIndex];
         next = path[loopIndex + 1];
     } else {
+        // this handles the case that the robot covered all the path nodes and needs to stop
         state = State::stop;
     }
     switch (state) {
         case State::move: {
+            // find the x and y of the original grid
             yRelative = next->getY() * robotGridSize + robotGridSize / 2;
             xRelative = next->getX() * robotGridSize + robotGridSize / 2;
             if (!got_to_cell(yRelative, xRelative)) {
+                // if the robot didn't get to cell - continue to move
                 krembot.Base.drive(100, 0);
             } else {
+                // if the robot got to cell - stop and switch to turn state
                 LOG << "loopIndex: " << loopIndex << endl;
                 krembot.Base.stop();
                 loopIndex++;
@@ -628,11 +673,14 @@ void WSTC_controller::loop() {
             break;
         }
         case State::turn: {
+            // calculate the degree that the robot needs to move in
             deg = calcDeg(current, next);
             if (!got_to_orientation(deg)) {
-                speed = calc_Angular_spd(deg);
-                krembot.Base.drive(0, speed);
+                // if the robot didn't get to the degree - calculate the angularSpd and turn
+                angularSpd = calc_Angular_spd(deg);
+                krembot.Base.drive(0, angularSpd);
             } else {
+                // if the robot got to the degree - stop and switch to move state
                 krembot.Base.stop();
                 krembot.Led.write(0, 255, 0);
                 state = State::move;
@@ -640,33 +688,36 @@ void WSTC_controller::loop() {
             break;
         }
         case State::stop: {
+            // stop
             krembot.Led.write(255, 0, 0);
             krembot.Base.stop();
         }
     }
 }
 
+/// function that calculates the Angular spd that the robot needs to turn
 int WSTC_controller::calc_Angular_spd(CDegrees deg) {
-    int ang_speed;
+    int angularSpd;
 
     // general case
     if (deg < degreeX.UnsignedNormalize()) {
-        ang_speed = -25;
+        angularSpd = -25;
     } else {
-        ang_speed = 25;
+        angularSpd = 25;
     }
 
     // specific cases - to make turn more efficient
     if (degreeX.UnsignedNormalize() > CDegrees(359.50) && deg == upDeg) {
-        ang_speed = 25;
+        angularSpd = 25;
     } else if (degreeX.UnsignedNormalize() < CDegrees(0.5) && deg == downDeg) {
-        ang_speed = -25;
+        angularSpd = -25;
     } else if (degreeX.UnsignedNormalize() > CDegrees(269.5) && deg == rightDeg) {
-        ang_speed = 25;
+        angularSpd = 25;
     }
-    return ang_speed;
+    return angularSpd;
 }
 
+/// function that calculates the degree that the robot needs to move in
 CDegrees WSTC_controller::calcDeg(Node *current, Node *next) {
     // up
     if (current->getX() < next->getX()) {
@@ -690,6 +741,7 @@ CDegrees WSTC_controller::calcDeg(Node *current, Node *next) {
     }
 }
 
+/// function that initializes nodes matrix for the coarse grid
 void WSTC_controller::init_nodes_matrix_coarse(int _width, int _height) {
     nodesMatrixCoarse = new Node **[_width];
     for (int i = 0; i < _width; i++) {
@@ -701,17 +753,20 @@ void WSTC_controller::init_nodes_matrix_coarse(int _width, int _height) {
     for (int i = 0; i < _height; ++i) {
         for (int j = 0; j < _width; j++) {
             if (coarseGrid[i][j] == 1) {
+                // this is the case of an obstacle
                 isObstacle = true;
             } else {
                 isObstacle = false;
             }
             weight = weightsCoarse[i][j];
+            // create a new object of node
             nodesMatrixCoarse[i][j] = new Node(id, i, j, weight, isObstacle, true);
             id++;
         }
     }
 }
 
+/// function that initializes nodes matrix for the uniform grid
 void WSTC_controller::init_nodes_matrix_uniform(int _width, int _height) {
     nodesMatrixUni = new Node **[_width];
     for (int i = 0; i < _width; i++) {
@@ -722,16 +777,19 @@ void WSTC_controller::init_nodes_matrix_uniform(int _width, int _height) {
     for (int i = 0; i < _height; ++i) {
         for (int j = 0; j < _width; j++) {
             if (uniformGrid[i][j] == 1) {
+                // this is the case of an obstacle
                 isObstacle = true;
             } else {
                 isObstacle = false;
             }
+            // create a new object of node
             nodesMatrixUni[i][j] = new Node(id, i, j, 0, isObstacle, false);
             id++;
         }
     }
 }
 
+/// function that initializes neighbors matrix for the coarse grid
 void WSTC_controller::init_neighbors_matrix(int _width, int _height) {
     int numOfNodes = _width * _height;
     neighborsMatrix = new int *[numOfNodes];
@@ -739,6 +797,7 @@ void WSTC_controller::init_neighbors_matrix(int _width, int _height) {
         neighborsMatrix[i] = new int[numOfNodes];
     }
 
+    // fill all the matrix cells with (-1)
     for (int i = 0; i < numOfNodes; ++i) {
         for (int j = 0; j < numOfNodes; j++) {
             neighborsMatrix[i][j] = -1;
@@ -750,12 +809,14 @@ void WSTC_controller::init_neighbors_matrix(int _width, int _height) {
         for (int j = 0; j < _width; j++) {
             node = nodesMatrixCoarse[i][j];
             if (!node->isObstacle()) {
+                // if node is not an obstacle - add his edges and neighbors
                 add_edge(node, _width, _height);
             }
         }
     }
 }
 
+/// function that adds neighbors to a specific node
 void WSTC_controller::add_edge(Node *node, int _width, int _height) {
     int id = node->getId();
     int x = node->getX();
@@ -764,47 +825,58 @@ void WSTC_controller::add_edge(Node *node, int _width, int _height) {
     int newX, newY, maxWeight;
     Node *neighbor;
 
-    // up
+    // neighbor from up
     newX = x + 1;
     newY = y;
+    // check we don't get out of bounds of grid
     if (newX < _height) {
         check_valid_edge(newX, newY, node);
     }
 
 
-    // down
+    // neighbor from down
     newX = x - 1;
     newY = y;
+    // check we don't get out of bounds of grid
     if (newX >= 0) {
         check_valid_edge(newX, newY, node);
     }
 
-    // right
+    // neighbor from right
     newX = x;
     newY = y + 1;
+    // check we don't get out of bounds of grid
     if (newY < _width) {
         check_valid_edge(newX, newY, node);
     }
 
-    // left
+    // neighbor from left
     newX = x;
     newY = y - 1;
+    // check we don't get out of bounds of grid
     if (newY >= 0) {
         check_valid_edge(newX, newY, node);
     }
 }
 
+/// function that adds an edge if it is valid
 void WSTC_controller::check_valid_edge(int newX, int newY, Node *node) {
     Node *neighbor = nodesMatrixCoarse[newX][newY];
     int maxWeight = 0;
+    // if neighbor is not an obstacle
     if (!neighbor->isObstacle()) {
+        // the weight of an edge is the maximum of weight of the edge's nodes
         maxWeight = max(node->getWeight(), neighbor->getWeight());
+        // fill the neighbors matrix with the edge weight to represent that the edge's nodes are neighbors
         neighborsMatrix[node->getId()][neighbor->getId()] = maxWeight;
+        // add the neighbor to the neighbors list
         node->addNeighbor(neighbor);
     }
 }
 
+/// function that initializes grid and its weights grid
 void WSTC_controller::init_grid(int **oldGrid, int **oldWeights, int D, int _width, int _height) {
+    // width and height of the new grid
     int gridWidth = _width / D;
     int gridHeight = _height / D;
 
@@ -815,6 +887,7 @@ void WSTC_controller::init_grid(int **oldGrid, int **oldWeights, int D, int _wid
         weightsGrid[i] = new int[gridHeight];
     }
 
+    // fill the weightsGrid - the weight of a cell in the grid is the maximum weight of the cells from the old grid
     int maxWeight;
     for (int i = 0; i < gridHeight; i++) {
         for (int j = 0; j < gridWidth; j++) {
@@ -832,14 +905,15 @@ void WSTC_controller::init_grid(int **oldGrid, int **oldWeights, int D, int _wid
         }
     }
 
+    // if _height or _width is odd
     if (_height % 2 != 0) {
         _height -= 1;
     }
-
     if (_width % 2 != 0) {
         _width -= 1;
     }
 
+    // create the obstacles in the new grid
     for (int i = 0; i < _height; i++) {
         for (int j = 0; j < _width; j++) {
             if (oldGrid[i][j] == 1) {
@@ -850,30 +924,36 @@ void WSTC_controller::init_grid(int **oldGrid, int **oldWeights, int D, int _wid
     }
 
     if (D == robotGridSize) {
+        // then it's the case of uniformGrid
         uniformGrid = grid;
         weightsUniform = weightsGrid;
     } else if (D == 2) {
+        // then it's the case of coarseGrid
         coarseGrid = grid;
         weightsCoarse = weightsGrid;
     }
 
 }
 
+/// function that converts the position of the robot from the occupancy grid into a col and a row (showed in the tirgul)
 void WSTC_controller::pos_to_col_row(CVector2 Cpos, int *pCol, int *pRow) {
     *pCol = (Cpos.GetX() - origin.GetX()) / resolution;
     *pRow = (Cpos.GetY() - origin.GetY()) / resolution;
 }
 
+/// function that converts the location of the robot from the occupancy grid to the uniform grid
 void WSTC_controller::pos_to_col_row_uniform(int *pCol, int *pRow) {
     colU = *pCol / robotGridSize;
     rowU = *pRow / robotGridSize;
 }
 
+/// function that converts the location of the robot from the uniform grid to the coarse grid (showed in the tirgul)
 void WSTC_controller::pos_to_col_row_coarse(int *pCol, int *pRow) {
     colC = *pCol / 2;
     rowC = *pRow / 2;
 }
 
+/// function that returns true if the robot got to a wanted cell, and false o.w (showed in the tirgul)
 bool WSTC_controller::got_to_cell(int _col, int _row) {
     Real threshold = 0.0009;
     CVector2 cell_center_pos;
@@ -886,6 +966,7 @@ bool WSTC_controller::got_to_cell(int _col, int _row) {
     }
 }
 
+/// function that returns true if the robot got to a wanted degree, and false o.w (showed in the tirgul)
 bool WSTC_controller::got_to_orientation(CDegrees degree) {
     Real deg = (degreeX - degree).UnsignedNormalize().GetValue();
     if ((deg > 0.5) && (deg < 359.5)) {
@@ -895,6 +976,7 @@ bool WSTC_controller::got_to_orientation(CDegrees degree) {
     }
 }
 
+/// function that saves a txt file of a grid (for debug, showed in the tirgul)
 void WSTC_controller::save_grid_to_file(string name, int **grid, int _height, int _width) {
     ofstream m_cOutput;
     m_cOutput.open(name, ios_base::trunc | ios_base::out);
@@ -907,6 +989,7 @@ void WSTC_controller::save_grid_to_file(string name, int **grid, int _height, in
     m_cOutput.close();
 }
 
+/// function that saves a txt file of a grid with robot location (for debug, showed in the tirgul)
 void WSTC_controller::save_grid_to_file_with_robot_location(string name, int **grid,
                                                             int _height, int _width,
                                                             int robot_col, int robot_row) {
@@ -927,6 +1010,7 @@ void WSTC_controller::save_grid_to_file_with_robot_location(string name, int **g
     m_cOutput.close();
 }
 
+/// function that saves a txt file of a nodes gris (for debug)
 void WSTC_controller::save_nodes_to_file(string name, Node ***grid, int _height, int _width) {
     ofstream m_cOutput;
     m_cOutput.open(name, ios_base::trunc | ios_base::out);
@@ -940,6 +1024,7 @@ void WSTC_controller::save_nodes_to_file(string name, Node ***grid, int _height,
     m_cOutput.close();
 }
 
+/// function that saves a txt file of the mst (for debug)
 void WSTC_controller::save_tree_to_file(string name, int **grid, Direction **dir, int _height, int _width) {
     ofstream m_cOutput;
     m_cOutput.open(name, ios_base::trunc | ios_base::out);
@@ -978,6 +1063,7 @@ void WSTC_controller::save_tree_to_file(string name, int **grid, Direction **dir
     m_cOutput.close();
 }
 
+/// function that saves a txt file of the neighborsMatrix (for debug)
 void WSTC_controller::save_edges_to_file(string name, int _height, int _width) {
     ofstream m_cOutput;
     m_cOutput.open(name, ios_base::trunc | ios_base::out);
@@ -990,6 +1076,7 @@ void WSTC_controller::save_edges_to_file(string name, int _height, int _width) {
     m_cOutput.close();
 }
 
+// constructor
 Node::Node(int _id, int _x, int _y, int _weight, bool _obstacle, bool _coarseGrid) {
     id = _id;
     x = _x;
