@@ -143,6 +143,10 @@ public:
 
     static void save_tree_to_file(string name, int **grid, Direction **dir, int _height, int _width);
 
+    CDegrees calc_deg_centering_x(int curr_row, int center_row);
+
+    CDegrees calc_deg_centering_y(int curr_col, int center_col);
+
 };
 
 

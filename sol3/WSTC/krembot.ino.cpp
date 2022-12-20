@@ -44,10 +44,12 @@ bool isFirstCell;
 
 
 enum State {
+    centering_robot_x,
+    centering_robot_y,
     move,
     turn,
     stop
-} state = turn;
+} state = centering_robot_x;
 
 void WSTC_controller::setup() {
     krembot.setup();
@@ -128,9 +130,9 @@ void WSTC_controller::init_path() {
     vector<Node *> blackNodes;
     vector<Node *> neighbors;
     neighbors.push_back(root);
+    path.push_back(root);
     Node *current = root;
     Node *prev = root;
-    path.push_back(root);
     while (true) {
         if (neighbors.empty()) {
             // if there are no more neighbors - stop the loop
@@ -646,20 +648,64 @@ void WSTC_controller::loop() {
     Node *current = nullptr;
     Node *next = nullptr;
     CDegrees deg;
-    int angularSpd, xRelative, yRelative;
+    int angularSpd,xRelative, yRelative;
     if (loopIndex < (path.size() - 1)) {
         // this handles the case that the robot didn't cover all the path nodes
         current = path[loopIndex];
         next = path[loopIndex + 1];
+        // find the x and y of the original grid
+        yRelative = next->getY() * robotGridSize + robotGridSize / 2;
+        xRelative = next->getX() * robotGridSize + robotGridSize / 2;
     } else {
         // this handles the case that the robot covered all the path nodes and needs to stop
         state = State::stop;
     }
     switch (state) {
+        case State::centering_robot_x: {
+            if (row == xRelative) {
+                // if the robot is already in the center row - no need to move it
+                state = State::centering_robot_y;
+                break;
+            } else {
+                deg = calc_deg_centering_x(row, xRelative);
+            }
+            if (!got_to_orientation(deg)) {
+                krembot.Base.drive(0, 20);
+            } else {
+                krembot.Base.stop();
+                if (!got_to_cell(col, xRelative)) {
+                    krembot.Base.drive(100, 0);
+                } else {
+                    krembot.Base.stop();
+                    pos_to_col_row(pos, &col, &row);
+                    state = State::centering_robot_y;
+                }
+            }
+            break;
+        }
+        case State::centering_robot_y: {
+            if (col == yRelative) {
+                // if the robot is already in the center col - no need to move it
+                state = State::turn;
+                break;
+            } else {
+                deg = calc_deg_centering_y(col, yRelative);
+            }
+            if (!got_to_orientation(deg)) {
+                krembot.Base.drive(0, 20);
+            } else {
+                krembot.Base.stop();
+                if (!got_to_cell(yRelative, row)) {
+                    krembot.Base.drive(100, 0);
+                } else {
+                    krembot.Base.stop();
+                    pos_to_col_row(pos, &col, &row);
+                    state = State::turn;
+                }
+            }
+            break;
+        }
         case State::move: {
-            // find the x and y of the original grid
-            yRelative = next->getY() * robotGridSize + robotGridSize / 2;
-            xRelative = next->getX() * robotGridSize + robotGridSize / 2;
             if (!got_to_cell(yRelative, xRelative)) {
                 // if the robot didn't get to cell - continue to move
                 krembot.Base.drive(100, 0);
@@ -717,6 +763,30 @@ int WSTC_controller::calc_Angular_spd(CDegrees deg) {
     return angularSpd;
 }
 
+/// function that calculates the degree that the robot needs to move in order to be in the center
+CDegrees WSTC_controller::calc_deg_centering_x(int curr_row, int center_row) {
+    // up
+    if (curr_row < center_row) {
+        return upDeg;
+    }
+        // down
+    else {
+        return downDeg;
+    }
+}
+
+/// function that calculates the degree that the robot needs to move in order to be in the center
+CDegrees WSTC_controller::calc_deg_centering_y(int curr_col, int center_col) {
+    // right
+    if (curr_col < center_col) {
+        return rightDeg;
+    }
+        // left
+    else {
+        return leftDeg;
+    }
+}
+
 /// function that calculates the degree that the robot needs to move in
 CDegrees WSTC_controller::calcDeg(Node *current, Node *next) {
     // up
@@ -735,8 +805,8 @@ CDegrees WSTC_controller::calcDeg(Node *current, Node *next) {
     else if (current->getY() > next->getY()) {
         return leftDeg;
     }
-    // never reaches this condition
-    else{
+        // never reaches this condition
+    else {
         return rightDeg;
     }
 }
