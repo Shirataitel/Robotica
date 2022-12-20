@@ -39,6 +39,8 @@ vector<pair<int, int>> mst;
 vector<Node *> path;
 // count for the loop function
 int loopIndex;
+// bool variable to indicates if we are in the first cell in loop
+bool isFirstCell;
 
 
 enum State {
@@ -59,44 +61,48 @@ void WSTC_controller::setup() {
     width = mapMsg.width;
     robotGridSize = (int) (robotSize / resolution);
     loopIndex = 0;
+    isFirstCell = true;
 
     // occupancyGrid
-    save_grid_to_file("/home/oriya/krembot_sim/krembot_ws/WSTC/grid.txt", occupancyGrid, height, width);
+//    save_grid_to_file("/home/oriya/krembot_sim/krembot_ws/WSTC/grid.txt", occupancyGrid, height, width);
     pos = posMsg.pos;
     degreeX = posMsg.degreeX;
     pos_to_col_row(pos, &col, &row);
-    save_grid_to_file_with_robot_location("/home/oriya/krembot_sim/krembot_ws/files/grid-with-robot-loc.txt",occupancyGrid, height, width, col, row);
+//    save_grid_to_file_with_robot_location("/home/oriya/krembot_sim/krembot_ws/files/grid-with-robot-loc.txt",
+//                                          occupancyGrid, height, width, col, row);
 
 
     // initialize uniformGrid and weightsUniform
     init_grid(occupancyGrid, weights, robotGridSize, width, height);
     int h = height / robotGridSize;
     int w = width / robotGridSize;
-    save_grid_to_file("/home/oriya/krembot_sim/krembot_ws/files/uniform-grid.txt", uniformGrid, h, w);
-    save_grid_to_file("/home/oriya/krembot_sim/krembot_ws/files/uniform-weights.txt", weightsUniform, h, w);
+//    save_grid_to_file("/home/oriya/krembot_sim/krembot_ws/files/uniform-grid.txt", uniformGrid, h, w);
+//    save_grid_to_file("/home/oriya/krembot_sim/krembot_ws/files/uniform-weights.txt", weightsUniform, h, w);
     pos_to_col_row_uniform(&col, &row);
-    save_grid_to_file_with_robot_location("/home/oriya/krembot_sim/krembot_ws/files/uniform-with-robot-loc.txt",uniformGrid, h, w, colU, rowU);
+//    save_grid_to_file_with_robot_location("/home/oriya/krembot_sim/krembot_ws/files/uniform-with-robot-loc.txt",
+//                                          uniformGrid, h, w, colU, rowU);
 
 
     // initialize coarseGrid and weights Coarse
     init_grid(uniformGrid, weightsUniform, 2, w, h);
-    save_grid_to_file("/home/oriya/krembot_sim/krembot_ws/files/coarse-grid.txt", coarseGrid, h / 2, w / 2);
-    save_grid_to_file("/home/oriya/krembot_sim/krembot_ws/files/coarse-weights.txt", weightsCoarse, h / 2, w / 2);
+//    save_grid_to_file("/home/oriya/krembot_sim/krembot_ws/files/coarse-grid.txt", coarseGrid, h / 2, w / 2);
+//    save_grid_to_file("/home/oriya/krembot_sim/krembot_ws/files/coarse-weights.txt", weightsCoarse, h / 2, w / 2);
     pos_to_col_row_coarse(&colU, &rowU);
-    save_grid_to_file_with_robot_location("/home/oriya/krembot_sim/krembot_ws/files/coarse-with-robot-loc.txt",coarseGrid, h / 2, w / 2, colC, rowC);
+//    save_grid_to_file_with_robot_location("/home/oriya/krembot_sim/krembot_ws/files/coarse-with-robot-loc.txt",
+//                                          coarseGrid, h / 2, w / 2, colC, rowC);
 
     // initialize nodesMatrixUniform
     init_nodes_matrix_uniform(w, h);
-    save_nodes_to_file("/home/oriya/krembot_sim/krembot_ws/files/nodesUni.txt", nodesMatrixUni, h, w);
+//    save_nodes_to_file("/home/oriya/krembot_sim/krembot_ws/files/nodesUni.txt", nodesMatrixUni, h, w);
 
     // initialize nodesMatrixCoarse
     init_nodes_matrix_coarse(w / 2, h / 2);
-    save_nodes_to_file("/home/oriya/krembot_sim/krembot_ws/files/nodesCoarse.txt", nodesMatrixCoarse, h / 2, w / 2);
+//    save_nodes_to_file("/home/oriya/krembot_sim/krembot_ws/files/nodesCoarse.txt", nodesMatrixCoarse, h / 2, w / 2);
 
     // initialize neighborsMatrix
     int numOfNodes = (w / 2) * (h / 2);
     init_neighbors_matrix(w / 2, h / 2);
-    save_edges_to_file("/home/oriya/krembot_sim/krembot_ws/files/neighbors.txt", numOfNodes, numOfNodes);
+//    save_edges_to_file("/home/oriya/krembot_sim/krembot_ws/files/neighbors.txt", numOfNodes, numOfNodes);
 
     // initialize MST
     prim(numOfNodes);
@@ -108,7 +114,7 @@ void WSTC_controller::setup() {
     init_path();
 
     // print tree
-    save_tree_to_file("/home/oriya/krembot_sim/krembot_ws/files/mst.txt", coarseGrid, dirMatrix, h / 2, w / 2);
+//    save_tree_to_file("/home/oriya/krembot_sim/krembot_ws/files/mst.txt", coarseGrid, dirMatrix, h / 2, w / 2);
 
     free_memory();
 
@@ -124,9 +130,8 @@ void WSTC_controller::init_path() {
     neighbors.push_back(root);
     Node *current = root;
     Node *prev = root;
-    int i = 0;
+    path.push_back(root);
     while (true) {
-        i++;
         if (neighbors.empty()) {
             // if there are no more neighbors - stop the loop
             break;
@@ -144,10 +149,6 @@ void WSTC_controller::init_path() {
     }
     // add the root to path - to create a circular path
     path.push_back(root);
-    LOG << "path.size() = " << path.size() << endl;
-    for (int i = 0; i < path.size(); i++) {
-        LOG << i << ".   " << path[i]->getId() << endl;
-    }
 }
 
 /// function that returns nodes which are not in the blackNodes vector
@@ -664,7 +665,6 @@ void WSTC_controller::loop() {
                 krembot.Base.drive(100, 0);
             } else {
                 // if the robot got to cell - stop and switch to turn state
-                LOG << "loopIndex: " << loopIndex << endl;
                 krembot.Base.stop();
                 loopIndex++;
                 krembot.Led.write(255, 0, 0);
@@ -735,9 +735,9 @@ CDegrees WSTC_controller::calcDeg(Node *current, Node *next) {
     else if (current->getY() > next->getY()) {
         return leftDeg;
     }
-        // never reaches this condition
-    else {
-        return CDegrees(0);
+    // never reaches this condition
+    else{
+        return rightDeg;
     }
 }
 

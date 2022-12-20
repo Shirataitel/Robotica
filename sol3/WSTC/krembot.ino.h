@@ -104,8 +104,8 @@ public:
     static void save_grid_to_file(string name, int **grid, int _height, int _width);
 
     static void save_grid_to_file_with_robot_location(string name, int **grid,
-                                               int _height, int _width,
-                                               int robot_col, int robot_row);
+                                                      int _height, int _width,
+                                                      int robot_col, int robot_row);
 
     static void init_nodes_matrix_coarse(int _width, int _height);
 
@@ -138,8 +138,10 @@ public:
     static void free_memory();
 
     static CDegrees calcDeg(Node *current, Node *next);
+
     static int calc_Angular_spd(CDegrees deg);
-    static void save_tree_to_file(string name, int **grid,Direction** dir , int _height, int _width);
+
+    static void save_tree_to_file(string name, int **grid, Direction **dir, int _height, int _width);
 
 };
 
