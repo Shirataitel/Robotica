@@ -33,7 +33,7 @@ void foraging_8_controller::loop() {
     degreeX = posMsg.degreeX;
     int angularSpd;
 
-    if (!isWander) {
+    if (!isWander && !hasFood) {
         krembot.Base.stop();
         addHomePos();
     }
@@ -44,7 +44,7 @@ void foraging_8_controller::loop() {
     switch (state) {
 
         case State::move: {
-            LOG<<"in move"<<endl;
+            LOG << "in move" << endl;
             if (hasFood) {
                 state = State::findBase;
             } else if (homeBotF) {
@@ -54,7 +54,7 @@ void foraging_8_controller::loop() {
                 turnTimer.start(200);
                 state = State::passRobot;
             } else if (isObstcle) {
-                LOG<<"isObstcle is on"<<endl;
+                LOG << "isObstcle is on" << endl;
                 turnTimer.start(200);
                 state = State::turn;
             } else if (frequencyTurnTimer.finished()) {
@@ -68,15 +68,18 @@ void foraging_8_controller::loop() {
         }
 
         case State::findBase: {
-            LOG<<"in findBase"<<endl;
+            LOG << "homePos.size()" <<homePos.size() << endl;
+            LOG << "in findBase" << endl;
             if (!hasFood) {
                 state = State::move;
+            } else if (baseF) {
+                krembot.Base.drive(100, 0);
             }
             else if (baseR) {
                 krembot.Base.drive(30, -100);
             } else if (baseL) {
                 krembot.Base.drive(30, 100);
-            }else if (isObstcle) {
+            } else if (isObstcle) {
                 if (_distanceFL < _distanceFR) {
                     direction = -1;
                 } else {
@@ -104,9 +107,9 @@ void foraging_8_controller::loop() {
         }
 
         case State::turn: {
-            LOG<<"in turn"<<endl;
+            LOG << "in turn" << endl;
             if (hasFood && !homePos.empty()) {
-                LOG<<"if 1"<<endl;
+                LOG << "if 1" << endl;
                 CVector2 closestBase = find_closest_base();
                 CDegrees deg = calculateDeg(closestBase);
                 if (got_to_orientation(deg)) {
@@ -116,26 +119,29 @@ void foraging_8_controller::loop() {
                     angularSpd = calc_Angular_spd(deg);
                     krembot.Base.drive(0, angularSpd);
                 }
-            }
-            else if (turnTimer.finished()) {
-                LOG<<"if 2"<<endl;
+            } else if (isObstcle) {
+                krembot.Base.drive(0, 100);
+                krembot.Base.drive(0, 100);
+                state = State::move;
+            } else if (turnTimer.finished()) {
+                LOG << "if 2" << endl;
                 if (increaseTime) {
-                    _time = _time + 300;
+                    _time = _time + 400;
                     increaseTime = false;
                 } else {
                     increaseTime = true;
                 }
-                frequencyTurnTimer.start(increaseTime);
+                frequencyTurnTimer.start(_time);
                 state = State::move;
             } else {
-                LOG<<"if 3"<<endl;
+                LOG << "if 3" << endl;
                 krembot.Base.drive(0, 100);
             }
             break;
         }
 
         case State::passRobot: {
-            LOG<<"in passRobot"<<endl;
+            LOG << "in passRobot" << endl;
             if (hasFood) {
                 state = State::findBase;
             } else if (turnTimer.finished()) {
@@ -214,6 +220,7 @@ int foraging_8_controller::random_direction() {
 }
 
 void foraging_8_controller::addHomePos() {
+    LOG << "in addHomePos" << endl;
     if (!count(homePos.begin(), homePos.end(), pos)) {
         homePos.push_back(pos);
     }
@@ -235,7 +242,7 @@ void foraging_8_controller::init_environment_states() {
     } else {
         isRobot = false;
     }
-    if (_distanceF < 15 && !isRobot) {
+    if (_distanceF < 5 && !isRobot) {
         isObstcle = true;
     } else {
         isObstcle = false;
