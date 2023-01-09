@@ -36,7 +36,8 @@ void foraging_8_controller::loop() {
     degreeX = posMsg.degreeX;
     int angularSpd;
 
-//    if (!isWander && !hasFood) {
+    // add color rear
+//    if (baseFLR) {
 //        krembot.Base.stop();
 //        addHomePos();
 //    }
@@ -77,7 +78,6 @@ void foraging_8_controller::loop() {
 //            LOG << "homePos.size()" <<homePos.size() << endl;
             LOG << "in findBase" << endl;
             if (!hasFood) {
-                LOG << "isWander: " <<isWander<< endl;
                 LOG << "in !hasFood" << endl;
                 krembot.Base.stop();
                 addHomePos();
@@ -131,7 +131,7 @@ void foraging_8_controller::loop() {
             if (hasFood && !homePos.empty()) {
 //                LOG << "if 1" << endl;
                 CVector2 closestBase = find_closest_base();
-                CDegrees deg = calculateDeg(closestBase);
+                CDegrees deg = calculateDeg(closestBase).UnsignedNormalize();
                 if (got_to_orientation(deg)) {
                     krembot.Base.drive(100, 0);
                     state = State::move;
@@ -176,22 +176,35 @@ void foraging_8_controller::loop() {
 /// function that calculates the Angular spd that the robot needs to turn
 int foraging_8_controller::calc_Angular_spd(CDegrees deg) {
     int angularSpd;
-
+    LOG << "degreeX" << degreeX << endl;
+    LOG << "deg" << deg << endl;
+    LOG << "difference" << (degreeX - deg).UnsignedNormalize().GetValue() << endl;
     // general case
     if (deg < degreeX.UnsignedNormalize()) {
+        LOG << "if1" << endl;
         angularSpd = -25;
     } else {
+        LOG << "if2" << endl;
         angularSpd = 25;
     }
 
     // specific cases - to make turn more efficient
-//    if (degreeX.UnsignedNormalize() > CDegrees(359.50) && (deg <= CDegrees(90) && deg >= CDegrees(0))) {
-//        angularSpd = 25;
-//    } else if (degreeX.UnsignedNormalize() < CDegrees(0.5) && deg == downDeg) {
-//        angularSpd = -25;
-//    } else if (degreeX.UnsignedNormalize() > CDegrees(269.5) && deg == rightDeg) {
-//        angularSpd = 25;
-//    }
+    if (degreeX.UnsignedNormalize() > CDegrees(359.50) && (deg <= CDegrees(90) && deg >= CDegrees(0))) {
+        LOG << "if3" << endl;
+        angularSpd = 25;
+    } else if (degreeX.UnsignedNormalize() < CDegrees(0.5) && (deg <= CDegrees(360) && deg >= CDegrees(270))) {
+        LOG << "if4" << endl;
+        angularSpd = -25;
+    } else if (degreeX.UnsignedNormalize() > CDegrees(269.5) && (deg <= CDegrees(89.5) && deg >= CDegrees(0))) {
+        LOG << "if5" << endl;
+        angularSpd = 25;
+    } else if (deg > degreeX.UnsignedNormalize() && (degreeX - deg).UnsignedNormalize().GetValue() < 5) {
+        LOG << "if6" << endl;
+        angularSpd = 5;
+    } else if (deg < degreeX.UnsignedNormalize() && (degreeX - deg).UnsignedNormalize().GetValue() < 5) {
+        LOG << "if7" << endl;
+        angularSpd = -5;
+    }
     return angularSpd;
 }
 
@@ -239,8 +252,9 @@ int foraging_8_controller::random_direction() {
 }
 
 void foraging_8_controller::addHomePos() {
-//    LOG << "in addHomePos" << endl;
+    LOG << "in addHomePos" << endl;
     if (!count(homePos.begin(), homePos.end(), pos)) {
+        LOG << "in pos added" << endl;
         homePos.push_back(pos);
     }
 }
