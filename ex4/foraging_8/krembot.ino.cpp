@@ -3,6 +3,9 @@
 #include <algorithm>
 #include <cmath>
 
+#define rgb_num 255
+#define dis_threshold 10
+
 CVector2 pos;
 CDegrees degreeX;
 vector<CVector2> homePos;
@@ -33,10 +36,10 @@ void foraging_8_controller::loop() {
     degreeX = posMsg.degreeX;
     int angularSpd;
 
-    if (!isWander && !hasFood) {
-        krembot.Base.stop();
-        addHomePos();
-    }
+//    if (!isWander && !hasFood) {
+//        krembot.Base.stop();
+//        addHomePos();
+//    }
 
     read_colors();
     init_environment_states();
@@ -55,6 +58,9 @@ void foraging_8_controller::loop() {
                 state = State::passRobot;
             } else if (isObstcle) {
                 LOG << "isObstcle is on" << endl;
+                LOG << "baseR: " << baseR << endl;
+                LOG << "baseL: " << baseL << endl;
+                LOG << "baseF: " << baseF << endl;
                 turnTimer.start(200);
                 state = State::turn;
             } else if (frequencyTurnTimer.finished()) {
@@ -68,18 +74,25 @@ void foraging_8_controller::loop() {
         }
 
         case State::findBase: {
-            LOG << "homePos.size()" <<homePos.size() << endl;
+//            LOG << "homePos.size()" <<homePos.size() << endl;
             LOG << "in findBase" << endl;
             if (!hasFood) {
+                LOG << "isWander: " <<isWander<< endl;
+                LOG << "in !hasFood" << endl;
+                krembot.Base.stop();
+                addHomePos();
                 state = State::move;
             } else if (baseF) {
+                LOG << "in baseF" << endl;
                 krembot.Base.drive(100, 0);
-            }
-            else if (baseR) {
-                krembot.Base.drive(30, -100);
+            } else if (baseR) {
+                LOG << "in baseR" << endl;
+                krembot.Base.drive(30, -1 * turning_speed);
             } else if (baseL) {
-                krembot.Base.drive(30, 100);
+                LOG << "in baseL" << endl;
+                krembot.Base.drive(30, turning_speed);
             } else if (isObstcle) {
+                LOG << "in isObstcle" << endl;
                 if (_distanceFL < _distanceFR) {
                     direction = -1;
                 } else {
@@ -87,6 +100,10 @@ void foraging_8_controller::loop() {
                 }
                 state = State::turn;
             } else if (isRobot) {
+                LOG << "in isRobot" << endl;
+                LOG << "colorF" << colorF << endl;
+                LOG << "colorFL" << colorFL << endl;
+                LOG << "colorFR" << colorFR << endl;
                 if (colorFR != -1 && colorFL == -1) {
                     direction = 1;
                 } else if (colorFL != -1 && colorFR == -1) {
@@ -97,9 +114,12 @@ void foraging_8_controller::loop() {
                 turnTimer.start(200);
                 state = State::turn;
             } else {
+                LOG << "in else" << endl;
                 if (homePos.empty()) {
+                    LOG << "in homePos.empty()" << endl;
                     krembot.Base.drive(100, 0);
                 } else {
+                    LOG << "in else else" << endl;
                     state = State::turn;
                 }
             }
@@ -109,7 +129,7 @@ void foraging_8_controller::loop() {
         case State::turn: {
             LOG << "in turn" << endl;
             if (hasFood && !homePos.empty()) {
-                LOG << "if 1" << endl;
+//                LOG << "if 1" << endl;
                 CVector2 closestBase = find_closest_base();
                 CDegrees deg = calculateDeg(closestBase);
                 if (got_to_orientation(deg)) {
@@ -120,11 +140,10 @@ void foraging_8_controller::loop() {
                     krembot.Base.drive(0, angularSpd);
                 }
             } else if (isObstcle) {
-                krembot.Base.drive(0, 100);
-                krembot.Base.drive(0, 100);
+                krembot.Base.drive(0, turning_speed);
                 state = State::move;
             } else if (turnTimer.finished()) {
-                LOG << "if 2" << endl;
+//                LOG << "if 2" << endl;
                 if (increaseTime) {
                     _time = _time + 400;
                     increaseTime = false;
@@ -134,8 +153,8 @@ void foraging_8_controller::loop() {
                 frequencyTurnTimer.start(_time);
                 state = State::move;
             } else {
-                LOG << "if 3" << endl;
-                krembot.Base.drive(0, 100);
+//                LOG << "if 3" << endl;
+                krembot.Base.drive(0, turning_speed);
             }
             break;
         }
@@ -147,7 +166,7 @@ void foraging_8_controller::loop() {
             } else if (turnTimer.finished()) {
                 state = State::move;
             } else {
-                krembot.Base.drive(50, direction * 100);
+                krembot.Base.drive(50, direction * turning_speed);
             }
             break;
         }
@@ -220,7 +239,7 @@ int foraging_8_controller::random_direction() {
 }
 
 void foraging_8_controller::addHomePos() {
-    LOG << "in addHomePos" << endl;
+//    LOG << "in addHomePos" << endl;
     if (!count(homePos.begin(), homePos.end(), pos)) {
         homePos.push_back(pos);
     }
@@ -242,7 +261,7 @@ void foraging_8_controller::init_environment_states() {
     } else {
         isRobot = false;
     }
-    if (_distanceF < 5 && !isRobot) {
+    if ((_distanceF < dis_threshold || _distanceFL < dis_threshold || _distanceFR < dis_threshold) && !isRobot) {
         isObstcle = true;
     } else {
         isObstcle = false;
@@ -284,18 +303,14 @@ void foraging_8_controller::init_colors() {
 }
 
 int foraging_8_controller::convert_color_to_int(RGBAResult color) {
-    if (color.Red == 255) {
-        if (color.Blue == 225) {
-            return Color::_magenta;
-        } else {
-            return Color::_red;
-        }
-    } else if (color.Green == 255) {
-        if (color.Blue == 225) {
-            return Color::_cyan;
-        } else {
-            return Color::_green;
-        }
+    if (color.Red == rgb_num && color.Blue == rgb_num && color.Green == 0) {
+        return Color::_magenta;
+    } else if (color.Red == rgb_num && color.Blue == 0 && color.Green == 0) {
+        return Color::_red;
+    } else if (color.Green == rgb_num && color.Blue == rgb_num && color.Red == 0) {
+        return Color::_cyan;
+    } else if (color.Green == rgb_num && color.Blue == 0 && color.Red == 0) {
+        return Color::_green;
     } else {
         return -1;
     }

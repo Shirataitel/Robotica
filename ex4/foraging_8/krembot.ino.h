@@ -8,8 +8,7 @@ private:
         turn,
         move,
         findBase,
-        passRobot,
-        block
+        passRobot
     };
 
     enum Color{
