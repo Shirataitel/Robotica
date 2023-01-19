@@ -10,6 +10,7 @@ private:
         findBase,
         block,
         addHomeBase,
+        collision,
         passRobot
     };
 
@@ -28,7 +29,7 @@ private:
 public:
     void setup() override;
     void loop() override;
-
+    bool samePos(CVector2 otherPos);
     void addHomePos();
     void addHomeArea();
     void init_colors();

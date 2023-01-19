@@ -22,8 +22,11 @@ bool oppBotF;
 bool isObstcle, isRobot;
 bool baseF, baseR, baseL;
 bool oppBaseF, oppBaseR, oppBaseL;
+bool isFirstBlock;
+bool isCollision;
+BumpersRes bumpers;
+CVector2 blockPos;
 int _time;
-CDegrees turnLeft;
 
 void foraging_8_controller::setup() {
     krembot.setup();
@@ -31,6 +34,7 @@ void foraging_8_controller::setup() {
     teamName = "foraging_8_controller";
     init_colors();
     increaseTime = false;
+    isFirstBlock = true;
     direction = 1;
     _time = start_time;
     frequencyTurnTimer.start(_time);
@@ -46,7 +50,7 @@ void foraging_8_controller::loop() {
     read_colors();
     init_environment_states();
 
-    if(startCover.finished()){
+    if (startCover.finished()) {
         _time = start_time;
         frequencyTurnTimer.start(_time);
         startCover.start(1000000);
@@ -58,8 +62,7 @@ void foraging_8_controller::loop() {
 //            LOG << "move" << endl;
             if (hasFood) {
                 state = State::findBase;
-            }
-            else if (oppBaseF && frequencyBlockTimer.finished()) {
+            } else if (oppBaseF && frequencyBlockTimer.finished()) {
 //                LOG << "oppBaseF(move)" << endl;
                 krembot.Base.drive(100, 0);
                 blockTimer.start(block_time);
@@ -74,8 +77,7 @@ void foraging_8_controller::loop() {
                 krembot.Base.drive(30, turning_speed);
                 blockTimer.start(block_time);
                 state = State::block;
-            }
-            else if (baseF && frequencyAddPosTimer.finished()) {
+            } else if (baseF && frequencyAddPosTimer.finished()) {
 //                LOG << "baseF(move)" << endl;
                 krembot.Base.drive(100, 0);
                 state = State::addHomeBase;
@@ -87,9 +89,12 @@ void foraging_8_controller::loop() {
 //                LOG << "baseL(move)" << endl;
                 krembot.Base.drive(30, turning_speed);
                 state = State::addHomeBase;
-            }
-            else if (homeBotF || oppBotF) {
-//                LOG << "homeBotF || oppBotF (move)" << endl;
+            } else if (isCollision) {
+//                LOG << "bumped" << endl;
+                turnTimer.start(440);
+                state = State::collision;
+            } else if (isRobot) {
+//                LOG << "isRobot (move)" << endl;
                 turnTimer.start(200);
                 state = State::passRobot;
             } else if (isObstcle) {
@@ -97,9 +102,11 @@ void foraging_8_controller::loop() {
                 turnTimer.start(200);
                 state = State::turn;
             } else if (frequencyTurnTimer.finished()) {
+//                LOG << "frequencyTurnTimer.finished() (move)" << endl;
                 turnTimer.start(220);
                 state = State::turn;
             } else {
+//                LOG << "else (move)" << endl;
                 krembot.Base.drive(100, 0);
             }
             break;
@@ -131,11 +138,9 @@ void foraging_8_controller::loop() {
                     direction = 1;
                 }
                 krembot.Base.drive(50, direction * turning_speed);
-            }
-            else if (isRobot) {
+            } else if (isRobot) {
                 krembot.Base.drive(100, 0);
-            }
-            else {
+            } else {
 //                LOG << "else(findBase)" << endl;
                 if (homePos.empty() && homeArea.empty()) {
 //                    LOG << "homePos & homeArea empty(findBase)" << endl;
@@ -151,8 +156,8 @@ void foraging_8_controller::loop() {
 
         case State::turn: {
 //            LOG << "turn" << endl;
-            if (hasFood && (!homePos.empty()|| !homeArea.empty())) {
-//                LOG << "if 1(turn)" << endl;
+            if (hasFood && (!homePos.empty() || !homeArea.empty())) {
+//                LOG << "hasFood(turn)" << endl;
                 CVector2 closestBase = find_closest_base();
                 CDegrees deg = calculateDeg(closestBase).UnsignedNormalize();
                 if (got_to_orientation(deg)) {
@@ -162,11 +167,12 @@ void foraging_8_controller::loop() {
                     angularSpd = calc_Angular_spd(deg);
                     krembot.Base.drive(0, angularSpd);
                 }
-            } else if (isObstcle) {
-//                LOG << "if 2(turn)" << endl;
+            }else if (isObstcle) {
+//                LOG << "isObstcle(turn)" << endl;
                 krembot.Base.drive(0, turning_speed);
                 state = State::move;
             } else if (turnTimer.finished()) {
+//                LOG << "turnTimer.finished (turn)" << endl;
                 if (increaseTime) {
                     _time = _time + 400;
                     increaseTime = false;
@@ -176,7 +182,7 @@ void foraging_8_controller::loop() {
                 frequencyTurnTimer.start(_time);
                 state = State::move;
             } else {
-//                LOG << "if 4(turn)" << endl;
+//                LOG << "else (turn)" << endl;
                 krembot.Base.drive(0, turning_speed);
             }
             break;
@@ -187,27 +193,36 @@ void foraging_8_controller::loop() {
             if (hasFood) {
 //                LOG << "hasFood(block)" << endl;
                 state = State::findBase;
-            } else if (blockTimer.finished()) {
-//                LOG << "blockTimer.finished(block)" << endl;
+            } else if (!isFirstBlock && !samePos(blockPos)) {
+//                LOG << "!samePos(block)" << endl;
+                isFirstBlock = true;
                 krembot.Base.drive(100, 0);
                 frequencyBlockTimer.start(10000);
                 state = State::move;
-            }
-            else if (!oppBaseF && !oppBaseR && !oppBaseL) {
+            } else if (blockTimer.finished()) {
+//                LOG << "blockTimer.finished(block)" << endl;
+                isFirstBlock = true;
+                krembot.Base.drive(100, 0);
+                frequencyBlockTimer.start(10000);
+                state = State::move;
+            } else if (!oppBaseF && !oppBaseR && !oppBaseL) {
 //                LOG << "!oppBaseF(block)" << endl;
                 krembot.Base.stop();
+                if (isFirstBlock) {
+//                    LOG << "firstTime(block)" << endl;
+                    isFirstBlock = false;
+                    blockPos = pos;
+                }
             } else if (oppBaseF) {
 //                LOG << "oppBaseF(block)" << endl;
                 krembot.Base.drive(100, 0);
-            }
-            else if (oppBaseR) {
+            } else if (oppBaseR) {
 //                LOG << "oppBaseR(block)" << endl;
-                krembot.Base.drive(30, -1*turning_speed);
+                krembot.Base.drive(30, -1 * turning_speed);
             } else if (oppBaseL) {
 //                LOG << "oppBaseL(block)" << endl;
                 krembot.Base.drive(30, turning_speed);
-            }
-            else {
+            } else {
 //                LOG << "else(block)" << endl;
                 krembot.Base.drive(100, 0);
             }
@@ -219,8 +234,7 @@ void foraging_8_controller::loop() {
             if (hasFood) {
 //                LOG << "hasFood(addHomeBase)" << endl;
                 state = State::findBase;
-            }
-            else if (!baseF && !baseR && !baseL) {
+            } else if (!baseF && !baseR && !baseL) {
 //                LOG << "!baseF(addHomeBase)" << endl;
                 krembot.Base.stop();
                 addHomeArea();
@@ -230,10 +244,24 @@ void foraging_8_controller::loop() {
 //                LOG << "baseF(addHomeBase)" << endl;
                 krembot.Base.drive(100, 0);
                 state = State::move;
-            }
-            else {
+            } else {
 //                LOG << "else(addHomeBase)" << endl;
                 krembot.Base.drive(100, 0);
+            }
+            break;
+        }
+
+        case State::collision: {
+//            LOG << "collision" << endl;
+            if (hasFood) {
+//                LOG << "hasFood (collision)" << endl;
+                state = State::findBase;
+            } else if (turnTimer.finished()) {
+//                LOG << "turnTimer.finished (collision)" << endl;
+                state = State::move;
+            } else {
+//                LOG << "else (collision)" << endl;
+                krembot.Base.drive(0, turning_speed);
             }
             break;
         }
@@ -241,10 +269,13 @@ void foraging_8_controller::loop() {
         case State::passRobot: {
 //            LOG << "passRobot" << endl;
             if (hasFood) {
+//                LOG << "hasFood (passRobot)" << endl;
                 state = State::findBase;
             } else if (turnTimer.finished()) {
+//                LOG << "turnTimer.finished (passRobot)" << endl;
                 state = State::move;
             } else {
+//                LOG << "else (passRobot)" << endl;
                 if (colorFR != -1 && colorFL == -1) {
                     direction = 1;
                 } else if (colorFL != -1 && colorFR == -1) {
@@ -259,12 +290,18 @@ void foraging_8_controller::loop() {
     }
 }
 
+/// function that returns true if the robot got to a wanted cell, and false o.w (showed in the tirgul)
+bool foraging_8_controller::samePos(CVector2 otherPos) {
+    if ((pos.GetX() == otherPos.GetX()) && (pos.GetY() == otherPos.GetY())) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 /// function that calculates the Angular spd that the robot needs to turn
 int foraging_8_controller::calc_Angular_spd(CDegrees deg) {
     int angularSpd;
-//    LOG << "degreeX" << degreeX << endl;
-//    LOG << "deg" << deg << endl;
-//    LOG << "difference" << (degreeX - deg).UnsignedNormalize().GetValue() << endl;
     // general case
     if (deg < degreeX.UnsignedNormalize()) {
         angularSpd = -25;
@@ -306,10 +343,9 @@ CDegrees foraging_8_controller::calculateDeg(CVector2 target) {
 
 CVector2 foraging_8_controller::find_closest_base() {
     vector<CVector2> vec;
-    if(!homePos.empty()){
+    if (!homePos.empty()) {
         vec = homePos;
-    }
-    else{
+    } else {
         vec = homeArea;
     }
     CVector2 closestBase;
@@ -385,7 +421,6 @@ void foraging_8_controller::init_environment_states() {
             baseL = false;
         }
     }
-
     if (colorF == opponentBaseColor) {
         oppBaseF = true;
     } else {
@@ -400,6 +435,12 @@ void foraging_8_controller::init_environment_states() {
         } else {
             oppBaseL = false;
         }
+    }
+    if (bumpers.front == BumperState::PRESSED || bumpers.front_left == BumperState::PRESSED ||
+        bumpers.front_right == BumperState::PRESSED) {
+        isCollision = true;
+    } else {
+        isCollision = false;
     }
 }
 
@@ -441,4 +482,6 @@ void foraging_8_controller::read_colors() {
     _distanceF = krembot.RgbaFront.readRGBA().Distance;
     _distanceFL = krembot.RgbaFrontLeft.readRGBA().Distance;
     _distanceFR = krembot.RgbaFrontRight.readRGBA().Distance;
+
+    bumpers = krembot.Bumpers.read();
 }
