@@ -8,6 +8,8 @@ private:
         turn,
         move,
         findBase,
+        block,
+        addHomeBase,
         passRobot
     };
 
@@ -19,7 +21,7 @@ private:
     };
 
     State state = move;
-    SandTimer turnTimer, frequencyTurnTimer;
+    SandTimer turnTimer, frequencyTurnTimer, blockTimer, frequencyBlockTimer;
     int turning_speed = 100;
     int direction = 1;
     Colors ourColor, opponentColor;
