@@ -7,10 +7,12 @@
 #define dis_threshold 10
 #define start_time 400
 #define block_time 10000
+#define add_pos_time 15000
 
 CVector2 pos;
 CDegrees degreeX;
 vector<CVector2> homePos;
+vector<CVector2> homeArea;
 float _distanceF, _distanceFL, _distanceFR;
 int homeBaseColor, opponentBaseColor, homeTeamColor, opponentTeamColor;
 int colorF, colorFL, colorFR, colorR, colorL;
@@ -32,6 +34,7 @@ void foraging_8_controller::setup() {
     direction = 1;
     _time = start_time;
     frequencyTurnTimer.start(_time);
+    startCover.start(1000000);
 }
 
 void foraging_8_controller::loop() {
@@ -42,6 +45,12 @@ void foraging_8_controller::loop() {
 
     read_colors();
     init_environment_states();
+
+    if(startCover.finished()){
+        _time = start_time;
+        frequencyTurnTimer.start(_time);
+        startCover.start(1000000);
+    }
 
     switch (state) {
 
@@ -66,12 +75,21 @@ void foraging_8_controller::loop() {
                 blockTimer.start(block_time);
                 state = State::block;
             }
-            else if (homeBotF) {
-                LOG << "homeBotF (move)" << endl;
-                turnTimer.start(200);
-                state = State::passRobot;
-            } else if (oppBotF) {
-                LOG << "oppBotF (move)" << endl;
+            else if (baseF && frequencyAddPosTimer.finished()) {
+                LOG << "baseF(move)" << endl;
+                krembot.Base.drive(100, 0);
+                state = State::addHomeBase;
+            } else if (baseR && frequencyAddPosTimer.finished()) {
+                LOG << "baseR(move)" << endl;
+                krembot.Base.drive(30, -1 * turning_speed);
+                state = State::addHomeBase;
+            } else if (baseL && frequencyAddPosTimer.finished()) {
+                LOG << "baseL(move)" << endl;
+                krembot.Base.drive(30, turning_speed);
+                state = State::addHomeBase;
+            }
+            else if (homeBotF || oppBotF) {
+                LOG << "homeBotF || oppBotF (move)" << endl;
                 turnTimer.start(200);
                 state = State::passRobot;
             } else if (isObstcle) {
@@ -93,9 +111,9 @@ void foraging_8_controller::loop() {
                 LOG << "not hasFood(findBase)" << endl;
                 krembot.Base.stop();
                 addHomePos();
-                _time = start_time;
-                frequencyTurnTimer.start(_time);
+                frequencyAddPosTimer.start(add_pos_time);
                 state = State::move;
+                startCover.start(5000);
             } else if (baseF) {
                 LOG << "baseF(findBase)" << endl;
                 krembot.Base.drive(100, 0);
@@ -131,8 +149,8 @@ void foraging_8_controller::loop() {
                 state = State::turn;
             } else {
                 LOG << "else(findBase)" << endl;
-                if (homePos.empty()) {
-                    LOG << "homePos.empty()(findBase)" << endl;
+                if (homePos.empty() && homeArea.empty()) {
+                    LOG << "homePos & homeArea empty(findBase)" << endl;
                     krembot.Base.drive(100, 0);
                 } else {
                     LOG << "else else(findBase)" << endl;
@@ -145,7 +163,7 @@ void foraging_8_controller::loop() {
 
         case State::turn: {
             LOG << "turn" << endl;
-            if (hasFood && !homePos.empty()) {
+            if (hasFood && (!homePos.empty()|| !homeArea.empty())) {
                 LOG << "if 1(turn)" << endl;
                 CVector2 closestBase = find_closest_base();
                 CDegrees deg = calculateDeg(closestBase).UnsignedNormalize();
@@ -163,9 +181,11 @@ void foraging_8_controller::loop() {
             } else if (turnTimer.finished()) {
                 LOG << "if 3(turn)" << endl;
                 if (increaseTime) {
+                    LOG << "if 3 - increase" << endl;
                     _time = _time + 400;
                     increaseTime = false;
                 } else {
+                    LOG << "if 3 - don't increase" << endl;
                     increaseTime = true;
                 }
                 frequencyTurnTimer.start(_time);
@@ -206,7 +226,6 @@ void foraging_8_controller::loop() {
                 LOG << "else(block)" << endl;
                 krembot.Base.drive(100, 0);
             }
-            state = State::addHomeBase;
             break;
         }
 
@@ -216,26 +235,16 @@ void foraging_8_controller::loop() {
                 LOG << "hasFood(addHomeBase)" << endl;
                 state = State::findBase;
             }
-//            else if (blockTimer.finished()) {
-//                LOG << "blockTimer.finished(block)" << endl;
-//                krembot.Base.drive(100, 0);
-//                frequencyBlockTimer.start(10000);
-//                state = State::move;
-//            }
             else if (!baseF && !baseR && !baseL) {
                 LOG << "!baseF(addHomeBase)" << endl;
                 krembot.Base.stop();
-                addHomePos();
+                addHomeArea();
+                frequencyAddPosTimer.start(add_pos_time);
+                state = State::move;
             } else if (baseF) {
                 LOG << "baseF(addHomeBase)" << endl;
                 krembot.Base.drive(100, 0);
-            }
-            else if (baseR) {
-                LOG << "baseR(addHomeBase)" << endl;
-                krembot.Base.drive(30, -1*turning_speed);
-            } else if (baseL) {
-                LOG << "baseL(addHomeBase)" << endl;
-                krembot.Base.drive(30, turning_speed);
+                state = State::move;
             }
             else {
                 LOG << "else(addHomeBase)" << endl;
@@ -309,18 +318,25 @@ CDegrees foraging_8_controller::calculateDeg(CVector2 target) {
 }
 
 CVector2 foraging_8_controller::find_closest_base() {
+    vector<CVector2> vec;
+    if(!homePos.empty()){
+        vec = homePos;
+    }
+    else{
+        vec = homeArea;
+    }
     CVector2 closestBase;
     float minDis = INFINITY;
     float distance, baseX, baseY, posX, posY;
-    for (int i = 0; i < homePos.size(); i++) {
-        baseX = homePos[i].GetX();
-        baseY = homePos[i].GetY();
+    for (int i = 0; i < vec.size(); i++) {
+        baseX = vec[i].GetX();
+        baseY = vec[i].GetY();
         posX = pos.GetX();
         posY = pos.GetY();
         distance = sqrt((baseX - posX) * (baseX - posX) + (baseY - posY) * (baseY - posY));
         if (distance < minDis) {
             minDis = distance;
-            closestBase = homePos[i];
+            closestBase = vec[i];
         }
     }
     return closestBase;
@@ -337,6 +353,14 @@ int foraging_8_controller::random_direction() {
 void foraging_8_controller::addHomePos() {
     LOG << "in addHomePos" << endl;
     if (!count(homePos.begin(), homePos.end(), pos)) {
+        LOG << "in pos added" << endl;
+        homePos.push_back(pos);
+    }
+}
+
+void foraging_8_controller::addHomeArea() {
+    LOG << "in addHomeArea" << endl;
+    if (!count(homeArea.begin(), homeArea.end(), pos)) {
         LOG << "in pos added" << endl;
         homePos.push_back(pos);
     }

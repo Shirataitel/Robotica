@@ -21,7 +21,7 @@ private:
     };
 
     State state = move;
-    SandTimer turnTimer, frequencyTurnTimer, blockTimer, frequencyBlockTimer;
+    SandTimer turnTimer, frequencyTurnTimer, blockTimer, frequencyBlockTimer, frequencyAddPosTimer, startCover;
     int turning_speed = 100;
     int direction = 1;
     Colors ourColor, opponentColor;
@@ -30,6 +30,7 @@ public:
     void loop() override;
 
     void addHomePos();
+    void addHomeArea();
     void init_colors();
     int convert_color_to_int(RGBAResult color);
     void read_colors();
@@ -39,6 +40,7 @@ public:
     CDegrees calculateDeg(CVector2 target);
     bool got_to_orientation(CDegrees degree);
     int calc_Angular_spd(CDegrees deg);
+
 };
 
 
