@@ -1,3 +1,6 @@
+// Shira Taitelbaum 322207341
+// Oriya Yehudai 211544150
+
 #include "krembot.ino.h"
 #include <vector>
 #include <algorithm>
@@ -8,6 +11,7 @@
 #define start_time 400
 #define block_time 8000
 #define add_pos_time 15000
+#define cover_time 1000000
 
 
 CVector2 pos;
@@ -18,8 +22,6 @@ float _distanceF, _distanceFL, _distanceFR;
 int homeBaseColor, opponentBaseColor, homeTeamColor, opponentTeamColor;
 int colorF, colorFL, colorFR, colorR, colorL;
 bool increaseTime;
-bool homeBotF;
-bool oppBotF;
 bool isObstcle, isRobot;
 bool baseF, baseR, baseL;
 bool oppBaseF, oppBaseR, oppBaseL;
@@ -39,7 +41,7 @@ void foraging_8_controller::setup() {
     direction = 1;
     _time = start_time;
     frequencyTurnTimer.start(_time);
-    startCover.start(1000000);
+    startCover.start(cover_time);
 }
 
 void foraging_8_controller::loop() {
@@ -56,93 +58,79 @@ void foraging_8_controller::loop() {
     if (startCover.finished()) {
         _time = start_time;
         frequencyTurnTimer.start(_time);
-        startCover.start(1000000);
+        startCover.start(cover_time);
     }
 
     switch (state) {
 
         case State::move: {
-//            LOG << "move" << endl;
             // if the robot has food - change state to findBase
             if (hasFood) {
                 state = State::findBase;
             }
                 // if the robot sees the opponent base in front
             else if (oppBaseF && frequencyBlockTimer.finished()) {
-//                LOG << "oppBaseF(move)" << endl;
                 krembot.Base.drive(100, 0);
                 blockTimer.start(block_time);
                 state = State::block;
             }
                 // if the robot sees the opponent base from right
             else if (oppBaseR && frequencyBlockTimer.finished()) {
-//                LOG << "oppBaseR(move)" << endl;
                 krembot.Base.drive(30, -1 * turning_speed);
                 blockTimer.start(block_time);
                 state = State::block;
             }
                 // if the robot sees the opponent base from left
             else if (oppBaseL && frequencyBlockTimer.finished()) {
-//                LOG << "oppBaseL(move)" << endl;
                 krembot.Base.drive(30, turning_speed);
                 blockTimer.start(block_time);
                 state = State::block;
             }
                 // if the robot sees its base in front
             else if (baseF && frequencyAddPosTimer.finished()) {
-//                LOG << "baseF(move)" << endl;
                 krembot.Base.drive(100, 0);
                 state = State::addHomeBase;
             }
                 // if the robot sees its base from right
             else if (baseR && frequencyAddPosTimer.finished()) {
-//                LOG << "baseR(move)" << endl;
                 krembot.Base.drive(30, -1 * turning_speed);
                 state = State::addHomeBase;
             }
                 // if the robot sees its base from left
             else if (baseL && frequencyAddPosTimer.finished()) {
-//                LOG << "baseL(move)" << endl;
                 krembot.Base.drive(30, turning_speed);
                 state = State::addHomeBase;
             }
                 // if the robot is in a collision
             else if (isCollision) {
-//                LOG << "bumped" << endl;
                 turnTimer.start(440);
                 state = State::collision;
             }
                 // if the robot sees a robot in front
             else if (isRobot) {
-//                LOG << "isRobot (move)" << endl;
                 turnTimer.start(200);
                 state = State::passRobot;
             }
                 // if the robot sees an obstacle in front
             else if (isObstcle) {
-//                LOG << "obstcle (move)" << endl;
                 turnTimer.start(200);
                 state = State::turn;
             }
                 // if the frequencyTurnTimer is finished go to turn state
             else if (frequencyTurnTimer.finished()) {
-//                LOG << "frequencyTurnTimer.finished() (move)" << endl;
                 turnTimer.start(220);
                 state = State::turn;
             }
                 // else - drive
             else {
-//                LOG << "else (move)" << endl;
                 krembot.Base.drive(100, 0);
             }
             break;
         }
 
         case State::findBase: {
-//            LOG << "findBase" << endl;
             // if the robot doesn't have food anymore - change to move state
             if (!hasFood) {
-//                LOG << "not hasFood(findBase)" << endl;
                 krembot.Base.stop();
                 addHomePos();
                 frequencyAddPosTimer.start(add_pos_time);
@@ -151,22 +139,18 @@ void foraging_8_controller::loop() {
             }
                 // if the robot sees our base in front
             else if (baseF) {
-//                LOG << "baseF(findBase)" << endl;
                 krembot.Base.drive(100, 0);
             }
                 // if the robot sees our base from right
             else if (baseR) {
-//                LOG << "baseR(findBase)" << endl;
                 krembot.Base.drive(30, -1 * turning_speed);
             }
                 // if the robot sees our base from left
             else if (baseL) {
-//                LOG << "baseL(findBase)" << endl;
                 krembot.Base.drive(30, turning_speed);
             }
                 // if the robot sees an obstacle in front
             else if (isObstcle) {
-//                LOG << "isObstcle(findBase)" << endl;
                 if (_distanceFL < _distanceFR) {
                     direction = -1;
                 } else {
@@ -178,15 +162,12 @@ void foraging_8_controller::loop() {
             }
                 // else - search our base
             else {
-//                LOG << "else(findBase)" << endl;
                 // if the robot doesn't know the position of our base
                 if (homePos.empty() && homeArea.empty()) {
-//                    LOG << "homePos & homeArea empty(findBase)" << endl;
                     krembot.Base.drive(100, 0);
                 }
                     // else - the robot knows the position of our base or an area which is close to the base
                 else {
-//                    LOG << "else else(findBase)" << endl;
                     turnTimer.start(200);
                     state = State::turn;
                 }
@@ -195,10 +176,8 @@ void foraging_8_controller::loop() {
         }
 
         case State::turn: {
-//            LOG << "turn" << endl;
             // if the robot has food and knows where our base is
             if (hasFood && (!homePos.empty() || !homeArea.empty())) {
-//                LOG << "hasFood(turn)" << endl;
                 CVector2 closestBase = find_closest_base();
                 CDegrees deg = calculateDeg(closestBase).UnsignedNormalize();
                 if (got_to_orientation(deg)) {
@@ -211,13 +190,11 @@ void foraging_8_controller::loop() {
             }
                 // if the robot sees on obstacle in front
             else if (isObstcle) {
-//                LOG << "isObstcle(turn)" << endl;
                 krembot.Base.drive(0, turning_speed);
                 state = State::move;
             }
                 // if turnTimer is finished change state to move
             else if (turnTimer.finished()) {
-//                LOG << "turnTimer.finished (turn)" << endl;
                 // every some steps of the robot increase the time that he will stay in move state
                 if (increaseTime) {
                     _time = _time + 400;
@@ -230,22 +207,18 @@ void foraging_8_controller::loop() {
             }
                 // else - turn
             else {
-//                LOG << "else (turn)" << endl;
                 krembot.Base.drive(0, turning_speed);
             }
             break;
         }
 
         case State::block: {
-//            LOG << "block" << endl;
             // if the robot has food - change state to findBase
             if (hasFood) {
-//                LOG << "hasFood(block)" << endl;
                 state = State::findBase;
             }
                 // if the robot is being pushed while trying to block
             else if (!isFirstBlock && !samePos(blockPos)) {
-//                LOG << "!samePos(block)" << endl;
                 isFirstBlock = true;
                 krembot.Base.drive(100, 0);
                 frequencyBlockTimer.start(10000);
@@ -253,7 +226,6 @@ void foraging_8_controller::loop() {
             }
                 // if blockTimer is finished - change state to move (in order not to waste all the time in blocking)
             else if (blockTimer.finished()) {
-//                LOG << "blockTimer.finished(block)" << endl;
                 isFirstBlock = true;
                 krembot.Base.drive(100, 0);
                 frequencyBlockTimer.start(10000);
@@ -261,97 +233,79 @@ void foraging_8_controller::loop() {
             }
                 // if the robot doesn't see the opponent base anymore - it means he is on it
             else if (!oppBaseF && !oppBaseR && !oppBaseL) {
-//                LOG << "!oppBaseF(block)" << endl;
                 krembot.Base.stop();
                 // saves the position where the robot stands in order to block
                 if (isFirstBlock) {
-//                    LOG << "firstTime(block)" << endl;
                     isFirstBlock = false;
                     blockPos = pos;
                 }
             }
                 // if the robot sees the opponent base in front
             else if (oppBaseF) {
-//                LOG << "oppBaseF(block)" << endl;
                 krembot.Base.drive(100, 0);
             }
                 // if the robot sees the opponent base from right
             else if (oppBaseR) {
-//                LOG << "oppBaseR(block)" << endl;
                 krembot.Base.drive(30, -1 * turning_speed);
             }
                 // if the robot sees the opponent base from left
             else if (oppBaseL) {
-//                LOG << "oppBaseL(block)" << endl;
                 krembot.Base.drive(30, turning_speed);
             } else {
-//                LOG << "else(block)" << endl;
                 krembot.Base.drive(100, 0);
             }
             break;
         }
 
         case State::addHomeBase: {
-//            LOG << "addHomeBase" << endl;
             // if the robot has food - change state to findBase
             if (hasFood) {
-//                LOG << "hasFood(addHomeBase)" << endl;
                 state = State::findBase;
             }
-            // if the robot doesn't see our base anymore - it means he is on it or close enough to it
+                // if the robot doesn't see our base anymore - it means he is on it or close enough to it
             else if (!baseF && !baseR && !baseL) {
-//                LOG << "!baseF(addHomeBase)" << endl;
                 // save the current position - and start a timer in order not to add the same area again
                 krembot.Base.stop();
                 addHomeArea();
                 frequencyAddPosTimer.start(add_pos_time);
                 state = State::move;
             }
-            // if the robot sees our base on front
+                // if the robot sees our base on front
             else if (baseF) {
-//                LOG << "baseF(addHomeBase)" << endl;
                 krembot.Base.drive(100, 0);
                 state = State::move;
             } else {
-//                LOG << "else(addHomeBase)" << endl;
                 krembot.Base.drive(100, 0);
             }
             break;
         }
 
         case State::collision: {
-//            LOG << "collision" << endl;
             // if the robot has food - change state to findBase
             if (hasFood) {
-//                LOG << "hasFood (collision)" << endl;
                 state = State::findBase;
             }
-            // if turnTimer is finished - change state to move
+                // if turnTimer is finished - change state to move
             else if (turnTimer.finished()) {
-//                LOG << "turnTimer.finished (collision)" << endl;
                 state = State::move;
             }
-            // turn in order to get out from the collision
+                // turn in order to get out from the collision
             else {
-//                LOG << "else (collision)" << endl;
                 krembot.Base.drive(0, turning_speed);
             }
             break;
         }
 
         case State::passRobot: {
-//            LOG << "passRobot" << endl;
             // if the robot has food - change state to findBase
             if (hasFood) {
-//                LOG << "hasFood (passRobot)" << endl;
                 state = State::findBase;
             }
                 // if turnTimer is finished - change state to move
             else if (turnTimer.finished()) {
-//                LOG << "turnTimer.finished (passRobot)" << endl;
                 state = State::move;
             } else {
-//                // if there is a robot from left but not from right
+                // if there is a robot from left but not from right
                 if (colorFR != -1 && colorFL == -1) {
                     direction = 1;
                 }
@@ -472,20 +426,9 @@ void foraging_8_controller::addHomeArea() {
 
 /// function that initializes the some of the robot states
 void foraging_8_controller::init_environment_states() {
-    // if there is a robot from our group in front of us
-    if (colorF == homeTeamColor || colorFL == homeTeamColor || colorFR == homeTeamColor) {
-        homeBotF = true;
-    } else {
-        homeBotF = false;
-    }
-    // if there is a robot from other group in front of us
-    if (colorF == opponentTeamColor || colorFL == opponentTeamColor || colorFR == opponentTeamColor) {
-        oppBotF = true;
-    } else {
-        oppBotF = false;
-    }
     // if there is a robot (doesn't matter from each group) in front of us
-    if (homeBotF || oppBotF) {
+    if (colorF == homeTeamColor || colorFL == homeTeamColor || colorFR == homeTeamColor ||
+        colorF == opponentTeamColor || colorFL == opponentTeamColor || colorFR == opponentTeamColor) {
         isRobot = true;
     } else {
         isRobot = false;

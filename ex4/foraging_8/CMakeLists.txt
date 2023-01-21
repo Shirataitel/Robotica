@@ -1,3 +1,6 @@
+# Shira Taitelbaum 322207341
+# Oriya Yehudai 211544150
+
 set (CMAKE_CXX_STANDARD 11)
 
 #todo user: rename program
